@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <meta content="KineticLoad - Gestión Bioadaptativa de Carga y Descarga Muscular para Atletas" name="description"/>
+  <meta content="#0c1322" name="theme-color"/>
+  <title>KineticLoad • Endurance Telemetry</title>
+  
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+  
+  <!-- Material Symbols Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS via CDN with Kinetic Performance Core Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-tint": "#4edea3",
+            "on-tertiary-fixed-variant": "#653e00",
+            "on-secondary-fixed-variant": "#004e5c",
+            "surface-container-low": "#141b2b",
+            "on-background": "#dce2f7",
+            "on-error-container": "#ffdad6",
+            "secondary-fixed": "#acedff",
+            "surface-container": "#191f2f",
+            "outline-variant": "#3c4a42",
+            "on-tertiary": "#472a00",
+            "secondary-container": "#03b5d3",
+            "surface-bright": "#323949",
+            "primary": "#4edea3",
+            "on-secondary-fixed": "#001f26",
+            "inverse-on-surface": "#293040",
+            "surface-container-high": "#232a3a",
+            "on-primary-container": "#00422b",
+            "on-surface": "#dce2f7",
+            "surface-variant": "#2e3545",
+            "outline": "#86948a",
+            "primary-fixed": "#6ffbbe",
+            "background": "#0c1322",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "on-error": "#690005",
+            "on-secondary": "#003640",
+            "on-secondary-container": "#00424e",
+            "tertiary": "#ffb95f",
+            "tertiary-container": "#e29100",
+            "secondary-fixed-dim": "#4cd7f6",
+            "primary-fixed-dim": "#4edea3",
+            "inverse-primary": "#006c49",
+            "surface-container-lowest": "#070e1d",
+            "on-primary": "#003824",
+            "on-tertiary-fixed": "#2a1700",
+            "tertiary-fixed": "#ffddb8",
+            "surface-dim": "#0c1322",
+            "on-primary-fixed": "#002113",
+            "on-tertiary-container": "#523200",
+            "inverse-surface": "#dce2f7",
+            "primary-container": "#10b981",
+            "on-primary-fixed-variant": "#005236",
+            "surface": "#0c1322",
+            "on-surface-variant": "#bbcabf",
+            "tertiary-fixed-dim": "#ffb95f",
+            "secondary": "#4cd7f6",
+            "surface-container-highest": "#2e3545"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            "2xl": "1rem",
+            full: "9999px"
+          },
+          spacing: {
+            "margin-lg": "2rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "gutter-md": "1.25rem",
+            "gutter-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin-md": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem"
+          },
+          fontFamily: {
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "label-lg": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "metric-display": ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom Styles -->
+  <link href="css/custom.css" rel="stylesheet"/>
+</head>
+
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-primary-container selection:text-on-primary-container">
+
+  <!-- AVISO VISIBLE: PROTOTIPO Y DESCARGO MÉDICO (Requerimiento de usuario y PRD) -->
+  <div id="prototype-medical-banner" class="sticky top-0 z-50 bg-surface-container-highest/95 backdrop-blur-md border-b border-primary/20 text-on-surface px-4 py-2.5 shadow-lg transition-all duration-300">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs sm:text-sm">
+      <div class="flex items-center gap-2 text-primary font-medium">
+        <span class="material-symbols-outlined text-tertiary text-lg shrink-0">info</span>
+        <span>
+          <strong class="font-bold text-tertiary">Prototipo Demostrativo:</strong> 
+          Esta aplicación es experimental. No reemplaza la valoración de un fisioterapeuta deportivo ni el diagnóstico médico profesional ante lesiones musculares o fracturas por estrés.
+        </span>
+      </div>
+      <button id="dismiss-banner-btn" class="text-on-surface-variant hover:text-on-surface transition-colors p-1 shrink-0" title="Minimizar aviso" aria-label="Cerrar aviso">
+        <span class="material-symbols-outlined text-base">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- HEADER PRINCIPAL DE NAVEGACIÓN (Escritorio y Marca) -->
+  <header class="w-full z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-surface-variant/40 shadow-[0_1px_8px_rgba(0,0,0,0.35)]">
+    <div class="h-16 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+      
+      <!-- Logotipo & Telemetría Status -->
+      <div class="flex items-center gap-4">
+        <a class="flex items-center gap-2.5 group cursor-pointer" data-view="dashboard" href="#dashboard">
+          <div class="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all duration-200 shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-headline-sm text-lg text-on-surface tracking-tight leading-none">
+              Kinetic<span class="text-primary font-bold">Load</span>
+            </span>
+            <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-widest leading-none mt-1">
+              Endurance Telemetry
+            </span>
+          </div>
+        </a>
+
+        <!-- Badge de telemetría activa -->
+        <div class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-surface-variant/50">
+          <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+          <span class="font-label-sm text-[11px] text-secondary uppercase font-semibold">
+            Modo Descarga Activa • 4 sem a carrera
+          </span>
+        </div>
+      </div>
+
+      <!-- Menú de navegación para escritorio -->
+      <nav class="hidden lg:flex items-center gap-1.5" id="desktop-nav">
+        <a class="desktop-nav-link px-3.5 py-2 rounded-xl font-label-md text-sm transition-all cursor-pointer bg-surface-container-high text-primary font-headline-sm" data-view="dashboard" href="#dashboard">
+          Mi Progreso
+        </a>
+        <a class="desktop-nav-link px-3.5 py-2 rounded-xl font-label-md text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all cursor-pointer" data-view="register" href="#register">
+          Registrar Molestia
+        </a>
+        <a class="desktop-nav-link px-3.5 py-2 rounded-xl font-label-md text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all cursor-pointer" data-view="routines" href="#routines">
+          Rutinas de Alivio
+        </a>
+        <a class="desktop-nav-link px-3.5 py-2 rounded-xl font-label-md text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all cursor-pointer" data-view="session" href="#session">
+          Sesión Guiada
+        </a>
+      </nav>
+
+      <!-- Perfil del Atleta: Mateo Gómez -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex flex-col items-end">
+          <span class="font-label-md text-sm text-on-surface font-semibold leading-tight">Mateo Gómez</span>
+          <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Triatleta Sub-Elite</span>
+        </div>
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-secondary p-0.5 shadow-md flex items-center justify-center">
+          <div class="w-full h-full rounded-full bg-surface-container-low flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-[20px]">person</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL DE VISTAS (SPA) -->
+  <main class="w-full flex-1 pb-mobile-nav lg:pb-12">
+
+    <!-- ========================================== -->
+    <!-- VISTA 1: DASHBOARD (Mi Progreso)           -->
+    <!-- ========================================== -->
+    <div id="view-dashboard" class="app-view active">
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        
+        <!-- Welcome Banner -->
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 bg-gradient-to-r from-surface-container to-surface-container-low p-6 rounded-2xl border border-surface-variant/40 shadow-md">
+          <div class="flex flex-col gap-1.5 max-w-3xl">
+            <div class="inline-flex items-center gap-2 self-start px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+              <span class="font-label-sm text-[11px] uppercase tracking-wider font-semibold">Telemetría de Readaptación • Maratón D-28</span>
+            </div>
+            <h1 class="font-headline-lg text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
+              ¡Hola Mateo! Tu recuperación va por muy buen camino <span class="inline-block hover:rotate-12 transition-transform duration-300">🌱</span>
+            </h1>
+            <p class="font-body-md text-on-surface-variant leading-relaxed">
+              Cuidando tu tibia y sóleo para llegar al 100% a tu carrera en 4 semanas. Monitoreamos cada kilojulio sin comprometer tu periostio.
+            </p>
+          </div>
+          <div class="flex items-center gap-3 bg-surface-container-high px-4 py-3 rounded-xl border border-surface-variant/50 shrink-0 shadow-sm">
+            <div class="flex flex-col text-right">
+              <span class="font-label-sm text-[10px] text-on-surface-variant uppercase font-medium">Estado Periostio Derecho</span>
+              <span class="font-headline-sm text-sm sm:text-base text-primary flex items-center justify-end gap-1 font-bold">
+                <span class="material-symbols-outlined text-primary text-base">verified</span>
+                Desinflamación Activa
+              </span>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-[24px]">healing</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Tarjetas de Métricas Clave (Bento Grid) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Card 1: RPE -->
+          <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-l-2xl"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Esfuerzo hoy (RPE)</span>
+              <span class="material-symbols-outlined text-secondary text-xl">fitness_center</span>
+            </div>
+            <div class="my-2">
+              <div class="flex items-baseline gap-1">
+                <span id="metric-rpe-val" class="font-headline-xl text-3xl font-extrabold text-on-surface">6.0</span>
+                <span class="text-sm text-on-surface-variant font-medium">/ 10</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs mt-1 font-medium">
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                <span id="metric-rpe-status">Moderado y seguro</span>
+              </div>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
+              <div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 60%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 2: Dolor EVA -->
+          <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Nivel de molestia (EVA)</span>
+              <span class="material-symbols-outlined text-primary text-xl">ecg_heart</span>
+            </div>
+            <div class="my-2">
+              <div class="flex items-baseline gap-1">
+                <span id="metric-pain-val" class="font-headline-xl text-3xl font-extrabold text-primary">2.4</span>
+                <span class="text-sm text-on-surface-variant font-medium">/ 10</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs mt-1 font-medium">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span id="metric-pain-status">En Zona Segura (≤ 4)</span>
+              </div>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
+              <div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 24%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 3: Meta Semanal -->
+          <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary rounded-l-2xl"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Meta de Descarga</span>
+              <span class="material-symbols-outlined text-tertiary text-xl">trophy</span>
+            </div>
+            <div class="my-2">
+              <div class="flex items-baseline gap-1">
+                <span class="font-headline-xl text-3xl font-extrabold text-on-surface">92</span>
+                <span class="text-sm text-tertiary font-bold">%</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs mt-1 font-medium">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                <span>Cumplido sin impacto</span>
+              </div>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
+              <div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 92%;"></div>
+            </div>
+          </div>
+
+          <!-- Card 4: Impacto Evitado -->
+          <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-fixed-dim rounded-l-2xl"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Impacto tibial evitado</span>
+              <span class="material-symbols-outlined text-secondary-fixed-dim text-xl">directions_bike</span>
+            </div>
+            <div class="my-2">
+              <div class="flex items-baseline gap-1">
+                <span class="font-headline-xl text-3xl font-extrabold text-on-surface">42</span>
+                <span class="text-sm text-secondary-fixed-dim font-bold">km</span>
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs mt-1 font-medium">
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                <span>Sustituidos por ciclismo</span>
+              </div>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
+              <div class="bg-secondary-fixed-dim h-full rounded-full transition-all duration-500" style="width: 84%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner de Prescripción Bioadaptativa -->
+        <div class="relative bg-surface-container-high rounded-2xl p-6 border border-surface-variant/50 overflow-hidden shadow-lg">
+          <div class="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-primary to-secondary"></div>
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div class="flex items-start gap-4 max-w-4xl">
+              <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-1 shadow-inner">
+                <span class="material-symbols-outlined text-[28px]">sports_score</span>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2.5 py-0.5 rounded-md bg-primary text-on-primary font-bold text-xs uppercase tracking-wider">
+                    Prescripción Bioadaptativa
+                  </span>
+                  <span class="text-xs text-on-surface-variant flex items-center gap-1">
+                    <span class="material-symbols-outlined text-secondary text-sm">update</span> Calibrado para hoy
+                  </span>
+                </div>
+                <h2 class="font-headline-md text-lg sm:text-xl text-on-surface font-bold leading-snug">
+                  Hoy cuidamos tu espinilla: 40 min de pedaleo suave en Z2 + 10 min de automasaje de descarga en sóleo.
+                </h2>
+                <p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+                  Mantienes tu capacidad aeróbica intacta con <strong class="text-primary font-semibold">Cero Impacto</strong> en asfalto, permitiendo la regeneración del periostio tibial sin perder VO2 Max para el maratón.
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto shrink-0">
+              <button data-view="session" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary hover:bg-surface-tint text-on-primary font-label-md font-bold flex items-center justify-center gap-2 transition-all shadow-md touch-press">
+                <span class="material-symbols-outlined text-lg">play_circle</span>
+                <span>Iniciar sesión de hoy</span>
+              </button>
+              <button data-view="register" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-surface-container-highest hover:bg-surface-bright text-on-surface font-label-md font-semibold flex items-center justify-center gap-2 transition-all border border-surface-variant/40 touch-press">
+                <span class="material-symbols-outlined text-lg">note_add</span>
+                <span>Anotar molestia</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: GRÁFICO LINEAL CARGA VS DOLOR (Requerimiento Función 5) -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div class="xl:col-span-8 bg-surface-container p-6 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-variant/30">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-headline-md text-lg text-on-surface font-bold">Curva Lineal de Carga vs. Nivel de Molestia</h3>
+                  <span class="material-symbols-outlined text-secondary text-lg" title="Relación volumen y dolor EVA">analytics</span>
+                </div>
+                <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider">Últimos 14 días • Evolución de la recuperación</span>
+              </div>
+              <!-- Leyenda interactiva -->
+              <div class="flex items-center flex-wrap gap-4 text-xs font-medium">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-3.5 h-1 rounded-full bg-secondary"></span>
+                  <span class="text-on-surface-variant">Carga de entrenamiento</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-3.5 h-1 rounded-full bg-primary"></span>
+                  <span class="text-primary font-semibold">Nivel de Dolor (EVA 1-10)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-3.5 h-0.5 border-t border-dashed border-primary"></span>
+                  <span class="text-primary/80 font-bold">Umbral Seguro (≤ 4)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contenedor del Gráfico Lineal -->
+            <div id="chart-container" class="relative w-full h-72 sm:h-80 my-4">
+              <!-- Zona Verde de Seguridad -->
+              <div class="absolute inset-x-0 bottom-0 h-[40%] bg-primary/5 border-t border-dashed border-primary/40 rounded-lg pointer-events-none flex items-start px-3 pt-1">
+                <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Zona de Retorno Seguro (Molestia controlada ≤ 4)</span>
+              </div>
+              
+              <!-- SVG Line Chart Dual -->
+              <svg id="load-pain-chart" class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 700 240">
+                <defs>
+                  <linearGradient id="painGrad" x1="0%" x2="0%" y1="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffb95f" stop-opacity="0.3"></stop>
+                    <stop offset="100%" stop-color="#4edea3" stop-opacity="0.0"></stop>
+                  </linearGradient>
+                </defs>
+                <!-- Guías horizontales -->
+                <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="700" y1="48" y2="48"></line>
+                <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="700" y1="96" y2="96"></line>
+                <line stroke="#4edea3" stroke-dasharray="4 4" stroke-width="1.5" x1="0" x2="700" y1="144" y2="144"></line> <!-- Umbral EVA 4 -->
+                <line stroke="#2e3545" stroke-width="1" x1="0" x2="700" y1="192" y2="192"></line>
+
+                <!-- LÍNEA 1: Carga de entrenamiento (Cian) -->
+                <path d="M 25 130 L 75 110 L 125 155 L 175 60 L 225 190 L 275 145 L 325 175 L 375 130 L 425 80 L 475 145 L 525 50 L 575 115 L 625 155 L 675 145" 
+                      fill="none" stroke="#4cd7f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"></path>
+
+                <!-- LÍNEA 2: Curva de Dolor EVA (Gradiente + Línea Verde/Ámbar) -->
+                <path d="M 25 145 Q 75 140, 125 135 T 175 55 T 225 90 T 275 115 T 325 130 T 375 120 T 425 105 T 475 125 T 525 160 T 575 165 T 625 175 T 675 180 L 675 192 L 25 192 Z" 
+                      fill="url(#painGrad)"></path>
+                <path d="M 25 145 Q 75 140, 125 135 T 175 55 T 225 90 T 275 115 T 325 130 T 375 120 T 425 105 T 475 125 T 525 160 T 575 165 T 625 175 T 675 180" 
+                      fill="none" stroke="#4edea3" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
+
+                <!-- Puntos interactivos clave -->
+                <!-- Pico asfalto Día 4 -->
+                <circle cx="175" cy="55" r="6" fill="#ffb4ab" stroke="#93000a" stroke-width="2"></circle>
+                <!-- Pico pedaleo Z2 Día 11 -->
+                <circle cx="525" cy="50" r="5" fill="#4cd7f6" stroke="#003640" stroke-width="2"></circle>
+                <!-- Punto hoy seguro -->
+                <circle cx="675" cy="180" r="6" fill="#4edea3" stroke="#003824" stroke-width="2"></circle>
+              </svg>
+            </div>
+
+            <!-- Eje X: Días -->
+            <div class="flex justify-between items-center text-xs text-on-surface-variant font-medium pt-2">
+              <span>Día 1</span>
+              <span>Día 3</span>
+              <span class="text-error font-bold">Día 4 (Pico Dolor)</span>
+              <span>Día 7</span>
+              <span>Día 9</span>
+              <span class="text-secondary font-bold">Día 11 (Bici Z2)</span>
+              <span>Día 13</span>
+              <span class="text-primary font-bold">Hoy (EVA 2.4)</span>
+            </div>
+          </div>
+
+          <!-- Columna lateral: Conclusiones clínicas simples -->
+          <div class="xl:col-span-4 flex flex-col justify-between gap-4">
+            <div class="bg-surface-container p-6 rounded-2xl border border-surface-variant/40 shadow-sm flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[20px]">psychology</span>
+                  </div>
+                  <h4 class="font-headline-sm text-base text-on-surface font-bold">Conclusiones de la Telemetría</h4>
+                </div>
+                <p class="font-body-sm text-xs text-on-surface-variant mb-4 leading-relaxed">
+                  Análisis comparativo de tus últimas 2 semanas de entrenamiento y dolor reportado:
+                </p>
+
+                <!-- Conclusión 1 -->
+                <div class="bg-surface-container-high p-3.5 rounded-xl mb-3 flex items-start gap-3 border border-surface-variant/30">
+                  <span class="material-symbols-outlined text-secondary text-xl shrink-0 mt-0.5">pedal_bike</span>
+                  <div>
+                    <h5 class="font-label-md text-xs text-on-surface font-bold">El impacto positivo del pedaleo</h5>
+                    <p class="font-body-sm text-xs text-on-surface-variant mt-0.5 leading-relaxed">
+                      Sustituir asfalto por rodillo redujo la inflamación del periostio un <strong class="text-secondary font-semibold">50% en 48 horas</strong> sin perder gasto aeróbico.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Conclusión 2 -->
+                <div class="bg-surface-container-high p-3.5 rounded-xl mb-3 flex items-start gap-3 border border-surface-variant/30">
+                  <span class="material-symbols-outlined text-tertiary text-xl shrink-0 mt-0.5">trending_down</span>
+                  <div>
+                    <h5 class="font-label-md text-xs text-on-surface font-bold">Cadencia de zancada</h5>
+                    <p class="font-body-sm text-xs text-on-surface-variant mt-0.5 leading-relaxed">
+                      Las cuestas abajo incrementan la tracción tibial. Mantén cadencia alta (>176 spm) al regresar a asfalto.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Conclusión 3 -->
+                <div class="bg-surface-container-high p-3.5 rounded-xl flex items-start gap-3 border border-surface-variant/30">
+                  <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">flag</span>
+                  <div>
+                    <h5 class="font-label-md text-xs text-on-surface font-bold">Objetivo de carrera intacto</h5>
+                    <p class="font-body-sm text-xs text-on-surface-variant mt-0.5 leading-relaxed">
+                      Tu ritmo previsto para la maratón sigue a salvo. Tu capacidad pulmonar no ha caído.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tip Atleta -->
+              <div class="mt-4 pt-3 border-t border-surface-variant/30 flex items-center justify-between text-xs text-on-surface-variant">
+                <span class="flex items-center gap-1.5 text-on-surface">
+                  <span class="material-symbols-outlined text-primary text-base">ac_unit</span>
+                  Crioterapia local 12 min tras la sesión
+                </span>
+                <span class="text-primary font-semibold">Protocolo activo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rutinas sugeridas en el Dashboard -->
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-label-sm text-xs text-primary uppercase font-bold tracking-wider">Protocolos de Alivio</span>
+              <h3 class="font-headline-md text-xl text-on-surface font-bold">Rutinas Recomendadas Hoy</h3>
+            </div>
+            <a data-view="routines" class="text-xs sm:text-sm text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+              Ver todas las rutinas <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Mini Routine Card 1 -->
+            <div data-view="session" class="bg-surface-container p-4 rounded-2xl border border-surface-variant/40 flex flex-col justify-between group hover:border-primary/50 transition-all cursor-pointer shadow-sm">
+              <div class="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-surface-container-lowest">
+                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFQkDghoUsRbPvR389_hojaLR-8j699-AN-8k2z1DguitSsuUrBTSNzP5iwQhNidFS2weEGjbO0nC-WfN6XSK5b0f-cHn0mCXnS_xHAtp3hw7Nhte0rH-YDYZoxKTE7KCWDvIWPj0049qdy0p8NTHH6_BwCxDaC5-dxCRd81bV-HMdpUdLIUZcvbUXDcuTpzB-A66_3D22j6H_JsQht-85FOxpW9iY1lUWWThVMMy2Rt9CA71yUw5tFw" alt="Descarga miofascial" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                <div class="absolute top-2 right-2 bg-surface-container-lowest/80 backdrop-blur-md px-2 py-0.5 rounded-full text-xs font-bold text-primary flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">timer</span> 6 min
+                </div>
+                <div class="absolute bottom-2 left-2 bg-primary text-on-primary text-[10px] uppercase font-bold px-2 py-0.5 rounded">
+                  Cero Impacto
+                </div>
+              </div>
+              <h4 class="font-headline-sm text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                Descarga Miofascial de Sóleo & Gemelo
+              </h4>
+              <p class="font-body-sm text-xs text-on-surface-variant mt-1 line-clamp-2">
+                Uso de foam roller para quitar tracción sobre el periostio tibial.
+              </p>
+              <div class="mt-3 pt-2 border-t border-surface-variant/30 flex items-center justify-between">
+                <span class="text-xs text-secondary font-medium">Baja tensión</span>
+                <span class="w-7 h-7 rounded-lg bg-surface-container-highest group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center transition-colors">
+                  <span class="material-symbols-outlined text-sm">play_arrow</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Mini Routine Card 2 -->
+            <div data-view="session" class="bg-surface-container p-4 rounded-2xl border border-surface-variant/40 flex flex-col justify-between group hover:border-primary/50 transition-all cursor-pointer shadow-sm">
+              <div class="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-surface-container-lowest">
+                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVTN25n7cgdwLUg6ZuA75QpZB1QzyN00fhBqIuXZdlpcUp_sY_Idr9bUh5ohhdO1FiKXLeu7A3Qh2rrcBkq9lpXg6MnZ86ZHN7PJX5DbSRus2EUK5_hnKCYE8_YC5fdo8GBuHbYSwa9adalMQplx0_CAk9u5d-Kid78IFfaHhkinK5GEyg596d9B-SAjFVgsGa1HCyH4aaXiVH-QIiJAmKxTL7jiopjuy17pJXMxMlZZs2GtPiUV-zQA" alt="Isometría tibial" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                <div class="absolute top-2 right-2 bg-surface-container-lowest/80 backdrop-blur-md px-2 py-0.5 rounded-full text-xs font-bold text-primary flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">timer</span> 8 min
+                </div>
+                <div class="absolute bottom-2 left-2 bg-secondary text-on-secondary text-[10px] uppercase font-bold px-2 py-0.5 rounded">
+                  Isométrico
+                </div>
+              </div>
+              <h4 class="font-headline-sm text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                Activación Isométrica de Tibial Posterior
+              </h4>
+              <p class="font-body-sm text-xs text-on-surface-variant mt-1 line-clamp-2">
+                Aumenta la tolerancia de carga del tendón y la fascia tibial.
+              </p>
+              <div class="mt-3 pt-2 border-t border-surface-variant/30 flex items-center justify-between">
+                <span class="text-xs text-secondary font-medium">Cero impacto</span>
+                <span class="w-7 h-7 rounded-lg bg-surface-container-highest group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center transition-colors">
+                  <span class="material-symbols-outlined text-sm">play_arrow</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Mini Routine Card 3 -->
+            <div data-view="session" class="bg-surface-container p-4 rounded-2xl border border-surface-variant/40 flex flex-col justify-between group hover:border-primary/50 transition-all cursor-pointer shadow-sm">
+              <div class="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-surface-container-lowest">
+                <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=600&q=80" alt="Movilidad de tobillo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                <div class="absolute top-2 right-2 bg-surface-container-lowest/80 backdrop-blur-md px-2 py-0.5 rounded-full text-xs font-bold text-primary flex items-center gap-1">
+                  <span class="material-symbols-outlined text-xs">timer</span> 5 min
+                </div>
+                <div class="absolute bottom-2 left-2 bg-tertiary text-on-tertiary text-[10px] uppercase font-bold px-2 py-0.5 rounded">
+                  Movilidad
+                </div>
+              </div>
+              <h4 class="font-headline-sm text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                Movilidad Activa de Tobillo en Carga
+              </h4>
+              <p class="font-body-sm text-xs text-on-surface-variant mt-1 line-clamp-2">
+                Dorsiflexión controlada para liberar la cadena posterior.
+              </p>
+              <div class="mt-3 pt-2 border-t border-surface-variant/30 flex items-center justify-between">
+                <span class="text-xs text-tertiary font-medium">Bajo impacto</span>
+                <span class="w-7 h-7 rounded-lg bg-surface-container-highest group-hover:bg-primary group-hover:text-on-primary flex items-center justify-center transition-colors">
+                  <span class="material-symbols-outlined text-sm">play_arrow</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VISTA 2: REGISTRAR MOLESTIA (Función 1)    -->
+    <!-- ========================================== -->
+    <div id="view-register" class="app-view">
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        
+        <!-- Header del Registro -->
+        <div class="w-full flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-6 bg-surface-container rounded-2xl border border-surface-variant/40 shadow-sm relative overflow-hidden">
+          <div class="flex flex-col gap-1.5 z-10">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-xs uppercase tracking-wider font-semibold">
+                <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                Registro Post-Entrenamiento
+              </span>
+              <span class="text-xs text-on-surface-variant font-medium">Sesión de hoy</span>
+            </div>
+            <h2 class="font-headline-lg text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
+              ¿Cómo han respondido tus piernas hoy, <span class="text-primary">Mateo</span>?
+            </h2>
+            <p class="font-body-md text-sm text-on-surface-variant">
+              Registra la zona con sobrecarga, tu nivel de molestia del 1 al 10 y el esfuerzo percibido (RPE).
+            </p>
+          </div>
+
+          <!-- Selector de Deporte de la Sesión -->
+          <div class="flex flex-col gap-1.5 z-10 w-full sm:w-auto">
+            <span class="font-label-sm text-xs text-on-surface-variant uppercase font-semibold">Deporte practicado:</span>
+            <div class="grid grid-cols-4 sm:flex items-center gap-1.5 bg-surface-container-low p-1.5 rounded-xl border border-surface-variant/40" id="sport-selector">
+              <button type="button" class="sport-btn active flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-on-primary font-label-md text-xs font-bold transition-all shadow-sm" data-sport="running">
+                <span class="material-symbols-outlined text-base">directions_run</span>
+                <span class="hidden sm:inline">Running</span>
+              </button>
+              <button type="button" class="sport-btn flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-xs font-medium" data-sport="ciclismo">
+                <span class="material-symbols-outlined text-base">pedal_bike</span>
+                <span class="hidden sm:inline">Ciclismo</span>
+              </button>
+              <button type="button" class="sport-btn flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-xs font-medium" data-sport="fuerza">
+                <span class="material-symbols-outlined text-base">fitness_center</span>
+                <span class="hidden sm:inline">Fuerza</span>
+              </button>
+              <button type="button" class="sport-btn flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-xs font-medium" data-sport="natacion">
+                <span class="material-symbols-outlined text-base">pool</span>
+                <span class="hidden sm:inline">Natación</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuadrante: Mapa Corporal (Izquierda) + Deslizadores de Dolor y RPE (Derecha) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Columna Izquierda: Mapa Anatómico -->
+          <section class="lg:col-span-7 flex flex-col gap-4 bg-surface-container p-6 rounded-2xl border border-surface-variant/40 shadow-sm">
+            <div class="flex items-center justify-between pb-2 border-b border-surface-variant/30">
+              <div class="flex flex-col">
+                <span class="font-label-sm text-xs text-primary uppercase tracking-widest font-bold">Localizador Anatómico</span>
+                <h3 class="font-headline-md text-lg text-on-surface font-bold">Zona de Mayor Molestia o Tensión</h3>
+              </div>
+              <div class="flex items-center gap-1 text-on-surface-variant text-xs bg-surface-container-low px-2.5 py-1 rounded-full border border-surface-variant/40">
+                <span class="material-symbols-outlined text-sm text-tertiary">touch_app</span>
+                <span>Toca una zona</span>
+              </div>
+            </div>
+
+            <!-- Siluetas Anatómicas Frontal y Posterior -->
+            <div class="relative w-full bg-surface-container-low rounded-xl p-4 flex flex-col sm:flex-row items-center justify-around gap-6 overflow-hidden border border-surface-variant/30">
+              
+              <!-- Vista Frontal -->
+              <div class="flex flex-col items-center gap-1 relative">
+                <span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">Vista Frontal</span>
+                <div class="relative w-44 h-72 flex items-center justify-center">
+                  <svg class="w-full h-full text-surface-variant" fill="currentColor" viewBox="0 0 160 320">
+                    <path d="M 40,20 C 60,15 100,15 120,20 C 125,45 110,60 100,65 C 80,68 80,68 60,65 C 50,60 35,45 40,20 Z" opacity="0.4"></path>
+                    <path d="M 46,68 C 38,100 40,140 48,170 C 53,178 68,178 72,170 C 76,140 76,100 70,68 Z" opacity="0.6"></path>
+                    <path d="M 90,68 C 84,100 84,140 88,170 C 92,178 107,178 112,170 C 120,140 122,100 114,68 Z" opacity="0.6"></path>
+                    <ellipse cx="60" cy="180" opacity="0.7" rx="8" ry="7"></ellipse>
+                    <ellipse cx="100" cy="180" opacity="0.7" rx="8" ry="7"></ellipse>
+                    <path d="M 53,190 C 50,220 52,260 55,290 C 58,295 65,295 68,290 C 68,260 67,220 67,190 Z" opacity="0.6"></path>
+                    <!-- Tibia Derecha (Hotspot) -->
+                    <path class="text-tertiary-container/40 transition-all hover:text-tertiary cursor-pointer body-zone-svg" data-zone="Espinilla (Tibia derecha)" d="M 93,190 C 93,220 92,260 92,290 C 95,295 102,295 105,290 C 108,260 110,220 107,190 Z"></path>
+                    <path d="M 52,293 C 44,297 38,304 42,310 C 54,312 65,310 66,293 Z" opacity="0.5"></path>
+                    <path d="M 108,293 C 116,297 122,304 118,310 C 106,312 95,310 94,293 Z" opacity="0.5"></path>
+                  </svg>
+                  
+                  <!-- Hotspot Pin Tibia Derecha -->
+                  <div class="absolute top-[68%] right-[28%] flex items-center group cursor-pointer body-zone-pin active" data-zone="Espinilla (Tibia derecha)">
+                    <span class="relative flex h-5 w-5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-5 w-5 bg-tertiary text-on-tertiary text-xs items-center justify-center shadow-lg font-bold">!</span>
+                    </span>
+                    <div class="absolute left-6 -top-2 bg-surface-container-highest px-2 py-0.5 rounded text-[10px] text-tertiary font-bold whitespace-nowrap shadow-md">
+                      Tibia / Periostio
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Separador vertical -->
+              <div class="hidden sm:block w-px h-56 bg-surface-variant/50"></div>
+
+              <!-- Vista Posterior -->
+              <div class="flex flex-col items-center gap-1 relative">
+                <span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">Vista Posterior</span>
+                <div class="relative w-44 h-72 flex items-center justify-center">
+                  <svg class="w-full h-full text-surface-variant" fill="currentColor" viewBox="0 0 160 320">
+                    <path d="M 40,20 C 60,16 100,16 120,20 C 128,45 118,65 106,68 C 96,70 84,65 80,65 C 76,65 64,70 54,68 C 42,65 32,45 40,20 Z" opacity="0.4"></path>
+                    <path d="M 46,68 C 40,100 42,140 49,170 C 53,178 68,178 72,170 C 76,140 77,100 70,68 Z" opacity="0.6"></path>
+                    <path d="M 90,68 C 83,100 84,140 88,170 C 92,178 107,178 111,170 C 118,140 120,100 114,68 Z" opacity="0.6"></path>
+                    <ellipse cx="60" cy="180" opacity="0.7" rx="6" ry="4"></ellipse>
+                    <ellipse cx="100" cy="180" opacity="0.7" rx="6" ry="4"></ellipse>
+                    <path d="M 51,188 C 46,215 48,255 54,285 C 57,290 64,290 67,285 C 70,255 70,215 67,188 Z" opacity="0.6"></path>
+                    <!-- Gemelo / Sóleo Derecho (Hotspot) -->
+                    <path class="text-primary/40 transition-all hover:text-primary cursor-pointer body-zone-svg" data-zone="Gemelo / Sóleo" d="M 93,188 C 90,215 90,255 93,285 C 96,290 103,290 106,285 C 112,255 114,215 109,188 Z"></path>
+                    <path d="M 56,287 C 54,298 52,305 48,310 C 60,311 68,308 66,287 Z" opacity="0.5"></path>
+                    <path d="M 94,287 C 92,308 100,311 112,310 C 108,305 106,298 104,287 Z" opacity="0.5"></path>
+                  </svg>
+
+                  <!-- Hotspot Pin Gemelo -->
+                  <div class="absolute top-[70%] right-[28%] flex items-center group cursor-pointer body-zone-pin" data-zone="Gemelo / Sóleo">
+                    <span class="relative flex h-5 w-5">
+                      <span class="relative inline-flex rounded-full h-5 w-5 bg-primary text-on-primary text-xs items-center justify-center shadow font-bold">2</span>
+                    </span>
+                    <div class="absolute left-6 -top-2 bg-surface-container-highest px-2 py-0.5 rounded text-[10px] text-primary font-bold whitespace-nowrap shadow-md">
+                      Sóleo / Gemelo
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Selector Rápido de Zonas Táctiles -->
+            <div class="flex flex-col gap-2 mt-2">
+              <span class="font-label-sm text-xs text-on-surface-variant uppercase font-semibold">O selecciona rápidamente la zona:</span>
+              <div class="flex flex-wrap items-center gap-2" id="quick-zone-selector">
+                <button type="button" class="zone-chip active px-3.5 py-1.5 rounded-full bg-tertiary/20 text-tertiary text-xs font-semibold flex items-center gap-1.5 border border-tertiary/40" data-zone="Espinilla (Tibia derecha)">
+                  <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                  Espinilla (Tibia derecha)
+                  <span class="material-symbols-outlined text-sm">check_circle</span>
+                </button>
+                <button type="button" class="zone-chip px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium flex items-center gap-1.5 border border-surface-variant/40" data-zone="Gemelo / Sóleo">
+                  <span class="w-2 h-2 rounded-full bg-primary"></span>
+                  Gemelo / Sóleo
+                </button>
+                <button type="button" class="zone-chip px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium flex items-center gap-1.5 border border-surface-variant/40" data-zone="Tendón de Aquiles">
+                  Tendón de Aquiles
+                </button>
+                <button type="button" class="zone-chip px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium flex items-center gap-1.5 border border-surface-variant/40" data-zone="Rodilla / Rótula">
+                  Rodilla / Rótula
+                </button>
+                <button type="button" class="zone-chip px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-medium flex items-center gap-1.5 border border-surface-variant/40" data-zone="Planta del pie / Fascia">
+                  Planta del pie / Fascia
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Columna Derecha: Escala de Dolor (1 a 10) + RPE (1 a 10) + Guardar -->
+          <section class="lg:col-span-5 flex flex-col justify-between gap-5 bg-surface-container p-6 rounded-2xl border border-surface-variant/40 shadow-sm">
+            <div class="flex flex-col gap-6">
+              
+              <!-- 1. Deslizador de Escala de Dolor (EVA 1 - 10) -->
+              <div class="flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl">ecg_heart</span>
+                    <label for="pain-range" class="font-headline-sm text-sm text-on-surface font-bold">Escala de Dolor / Molestia</label>
+                  </div>
+                  <div class="flex items-baseline gap-1">
+                    <span id="pain-display-val" class="text-2xl font-extrabold text-primary">3</span>
+                    <span class="text-xs text-on-surface-variant font-medium">/ 10</span>
+                  </div>
+                </div>
+
+                <input type="range" id="pain-range" min="1" max="10" step="1" value="3" class="w-full h-2.5 bg-surface-container-lowest rounded-lg cursor-pointer"/>
+
+                <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium px-1">
+                  <span>1 (Leve)</span>
+                  <span class="text-primary font-bold">≤ 4 (Zona Segura)</span>
+                  <span class="text-tertiary">7 (Severo)</span>
+                  <span class="text-error">10 (Incapacitante)</span>
+                </div>
+
+                <div id="pain-feedback-box" class="p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-medium flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base shrink-0">check_circle</span>
+                  <span id="pain-feedback-text">Dolor tolerable en zona verde. Permite mantener carga aeróbica modificada.</span>
+                </div>
+              </div>
+
+              <!-- 2. Deslizador de RPE (Percepción del Esfuerzo 1 - 10) -->
+              <div class="flex flex-col gap-2.5 pt-4 border-t border-surface-variant/30">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-xl">fitness_center</span>
+                    <label for="rpe-range" class="font-headline-sm text-sm text-on-surface font-bold">RPE (Esfuerzo del entrenamiento)</label>
+                  </div>
+                  <div class="flex items-baseline gap-1">
+                    <span id="rpe-display-val" class="text-2xl font-extrabold text-secondary">6</span>
+                    <span class="text-xs text-on-surface-variant font-medium">/ 10</span>
+                  </div>
+                </div>
+
+                <input type="range" id="rpe-range" min="1" max="10" step="1" value="6" class="w-full h-2.5 bg-surface-container-lowest rounded-lg cursor-pointer" style="accent-color: #4cd7f6;"/>
+
+                <div class="flex items-center justify-between text-[11px] text-on-surface-variant font-medium px-1">
+                  <span>1 (Muy fácil)</span>
+                  <span>5 (Moderado)</span>
+                  <span class="text-secondary font-bold">7 (Vigoroso)</span>
+                  <span>10 (Máximo)</span>
+                </div>
+
+                <p id="rpe-feedback-text" class="text-xs text-on-surface-variant italic">
+                  "Podía mantener frases cortas, ritmo de control de umbral aeróbico."
+                </p>
+              </div>
+
+              <!-- 3. Notas adicionales opcionales -->
+              <div class="flex flex-col gap-1.5 pt-2">
+                <label for="register-notes" class="text-xs text-on-surface-variant uppercase font-semibold">Notas sobre la molestia o superficie:</label>
+                <textarea id="register-notes" rows="2" class="w-full bg-surface-container-low border border-surface-variant/50 rounded-xl p-3 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-all resize-none" placeholder="Ej. Sentí pinchazo al pisar en bajada en el km 6, pero cedió al trotar en plano..."></textarea>
+              </div>
+
+            </div>
+
+            <!-- Botón de Guardado -->
+            <button id="save-log-btn" type="button" class="w-full py-3.5 rounded-xl bg-primary hover:bg-surface-tint text-on-primary font-label-md font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 touch-press mt-4">
+              <span class="material-symbols-outlined text-lg">save</span>
+              <span>Guardar registro y actualizar telemetría</span>
+            </button>
+
+          </section>
+
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VISTA 3: RUTINAS DE ALIVIO (Función 2)     -->
+    <!-- ========================================== -->
+    <div id="view-routines" class="app-view">
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        
+        <!-- Header & Buscador -->
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="flex flex-col max-w-3xl">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                <span class="font-label-sm text-xs uppercase text-primary tracking-widest font-bold">Protocolos Adaptativos</span>
+              </div>
+              <h2 class="font-headline-lg text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
+                Biblioteca de Rutinas y Descarga Activa
+              </h2>
+              <p class="font-body-md text-sm text-on-surface-variant mt-1 leading-relaxed">
+                Filtra rutinas de movilidad activa, automasaje y fortalecimiento isométrico según tu disciplina para no perder forma física.
+              </p>
+            </div>
+
+            <!-- Telemetría Pill -->
+            <div class="bg-surface-container px-4 py-2.5 rounded-xl border border-surface-variant/40 flex items-center gap-3 shrink-0 self-start md:self-end shadow-sm">
+              <div class="flex flex-col">
+                <span class="font-label-sm text-[10px] uppercase text-on-surface-variant font-medium">Tolerancia Tisular</span>
+                <span class="font-headline-sm text-xs sm:text-sm text-secondary font-bold">Óptima (Zona Segura)</span>
+              </div>
+              <div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+                <span class="material-symbols-outlined text-xl">shield_with_heart</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Búsqueda Inteligente -->
+          <div class="relative w-full bg-surface-container-high rounded-2xl border border-surface-variant/50 shadow-md flex items-center p-1.5 transition-all focus-within:border-primary">
+            <div class="pl-3.5 flex items-center text-primary pointer-events-none">
+              <span class="material-symbols-outlined text-2xl">search</span>
+            </div>
+            <input type="text" id="routine-search-input" class="w-full bg-transparent border-0 px-3 py-2 text-on-surface placeholder:text-on-surface-variant text-sm focus:outline-none" placeholder="¿Qué molestia o zona quieres aliviar? (ej. gemelos cargados, tibia, sóleo, cadera...)"/>
+            <button id="clear-search-btn" class="hidden pr-3 text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+              <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+
+          <!-- Filtros por Deporte (Chips) -->
+          <div class="flex items-center gap-2 flex-wrap pt-1" id="routine-sport-filters">
+            <span class="font-label-sm text-xs uppercase text-on-surface-variant font-semibold mr-1">Disciplina:</span>
+            <button type="button" class="routine-filter-chip active flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-bold transition-all shadow-sm" data-filter="all">
+              <span class="material-symbols-outlined text-sm">all_inclusive</span>
+              <span>Todas</span>
+            </button>
+            <button type="button" class="routine-filter-chip flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-variant font-label-md text-xs font-medium transition-all border border-surface-variant/40" data-filter="running">
+              <span class="material-symbols-outlined text-sm">directions_run</span>
+              <span>Para Corredores (Running)</span>
+            </button>
+            <button type="button" class="routine-filter-chip flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-variant font-label-md text-xs font-medium transition-all border border-surface-variant/40" data-filter="ciclismo">
+              <span class="material-symbols-outlined text-sm">pedal_bike</span>
+              <span>Ciclismo</span>
+            </button>
+            <button type="button" class="routine-filter-chip flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-variant font-label-md text-xs font-medium transition-all border border-surface-variant/40" data-filter="crossfit">
+              <span class="material-symbols-outlined text-sm">fitness_center</span>
+              <span>Crossfit</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuadrícula de Tarjetas de Rutinas -->
+        <div id="routines-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Las tarjetas de rutinas se renderizan dinámicamente con JS -->
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VISTA 4: SESIÓN GUIADA (Funciones 3 y 4 - Videos + 3 Botones) -->
+    <!-- ======================================================== -->
+    <div id="view-session" class="app-view">
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        
+        <!-- HUD Superior de Progreso de la Sesión -->
+        <section class="w-full bg-surface-container-lowest p-5 rounded-2xl border border-surface-variant/40 shadow-md">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10 text-primary">
+                  <span class="material-symbols-outlined text-xl">sports_gymnastics</span>
+                </span>
+                <div class="flex items-baseline gap-2">
+                  <span id="session-step-counter" class="font-headline-sm text-base text-on-surface font-bold">Paso 1 de 4:</span>
+                  <span id="session-step-motivational" class="font-body-md text-sm text-primary font-semibold">Iniciando protocolo de descarga</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 self-start sm:self-auto bg-surface-container px-3.5 py-1.5 rounded-full border border-surface-variant/40 text-xs">
+                <span class="material-symbols-outlined text-secondary text-sm">timer</span>
+                <span class="text-on-surface-variant uppercase font-medium">Tiempo restante:</span>
+                <span id="session-time-remaining" class="text-secondary font-bold">~06 min</span>
+              </div>
+            </div>
+
+            <!-- Barra Segmentada de Progreso (4 etapas) -->
+            <div class="grid grid-cols-4 gap-2 w-full pt-1" id="session-segmented-bar">
+              <!-- Renderizado interactivo de los 4 pasos -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Área Principal de Entrenamiento: Video Loop 20s + Biomecánica + 3 Botones -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Columna Reproductor Biomecánico (7 cols) -->
+          <div class="lg:col-span-7 flex flex-col gap-4">
+            
+            <div class="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest border border-surface-variant/50 shadow-xl flex flex-col">
+              
+              <!-- HUD Superior del Ejercicio -->
+              <div class="w-full px-4 py-2.5 bg-surface-container-high/90 backdrop-blur-md flex items-center justify-between gap-2 z-20 border-b border-surface-variant/40">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-[10px] uppercase font-bold">
+                    Cápsula Biomecánica
+                  </span>
+                  <h3 id="current-ex-title" class="font-headline-sm text-sm text-on-surface font-bold truncate">
+                    Liberación con Rodillo en Sóleo
+                  </h3>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 text-xs">
+                  <span class="text-on-surface-variant uppercase text-[10px] font-semibold">Enfoque:</span>
+                  <span id="current-ex-focus" class="text-secondary font-bold">Miofascial Descompresivo</span>
+                </div>
+              </div>
+
+              <!-- Reproductor Visual Biomecánico de 20s -->
+              <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-surface-container-lowest overflow-hidden flex items-center justify-center group">
+                <img id="current-ex-media" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFQkDghoUsRbPvR389_hojaLR-8j699-AN-8k2z1DguitSsuUrBTSNzP5iwQhNidFS2weEGjbO0nC-WfN6XSK5b0f-cHn0mCXnS_xHAtp3hw7Nhte0rH-YDYZoxKTE7KCWDvIWPj0049qdy0p8NTHH6_BwCxDaC5-dxCRd81bV-HMdpUdLIUZcvbUXDcuTpzB-A66_3D22j6H_JsQht-85FOxpW9iY1lUWWThVMMy2Rt9CA71yUw5tFw" alt="Ejercicio biomecánico" class="w-full h-full object-cover"/>
+                
+                <div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-surface-container-lowest/40 pointer-events-none"></div>
+
+                <!-- Timer Flotante de 20 segundos -->
+                <div class="absolute bottom-4 left-4 z-20 bg-surface-container-lowest/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-surface-variant/50 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></span>
+                  <span class="text-xs text-on-surface-variant uppercase font-medium">Bucle:</span>
+                  <span id="loop-timer-display" class="font-headline-sm text-sm text-primary font-bold">20s</span>
+                </div>
+
+                <!-- Botón de Pausa / Reproducción del loop -->
+                <button id="toggle-play-btn" type="button" class="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-primary/90 text-on-primary flex items-center justify-center hover:bg-primary transition-all shadow-lg touch-press">
+                  <span id="play-pause-icon" class="material-symbols-outlined text-2xl">pause</span>
+                </button>
+              </div>
+
+              <!-- Barra de Progreso del bucle de 20 segundos -->
+              <div class="w-full bg-surface-container-high h-1.5 overflow-hidden">
+                <div id="video-loop-progress" class="bg-primary h-full transition-all duration-200" style="width: 0%;"></div>
+              </div>
+
+            </div>
+
+            <!-- Puntos Clave Biomecánicos & Advertencia de Compensación -->
+            <div class="bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col gap-3">
+              <div class="flex items-center gap-2 pb-2 border-b border-surface-variant/30">
+                <span class="material-symbols-outlined text-primary text-xl">biometrics</span>
+                <h4 class="font-headline-sm text-sm text-on-surface font-bold">Puntos Clave de Ejecución</h4>
+              </div>
+              <ul id="current-ex-cues" class="flex flex-col gap-2 text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                <!-- Puntos dinámicos -->
+              </ul>
+
+              <!-- Alerta de compensación articular -->
+              <div class="mt-2 p-3 rounded-xl bg-error/10 border border-error/20 flex items-start gap-2.5 text-xs text-error">
+                <span class="material-symbols-outlined text-base shrink-0 mt-0.5">warning</span>
+                <div>
+                  <strong class="font-bold">Evita compensar:</strong>
+                  <span id="current-ex-warning">No flexiones la cadera ni descargues el peso hacia el borde externo del pie.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Columna Derecha: LOS 3 BOTONES DE GRAN FORMATO TÁCTIL (Requerimiento Usuario Fase 4) -->
+          <div class="lg:col-span-5 flex flex-col gap-4">
+            
+            <div class="bg-surface-container p-6 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col gap-4">
+              <div class="flex flex-col">
+                <span class="font-label-sm text-xs text-primary uppercase font-bold tracking-wider">Marcado de Ejercicio</span>
+                <h4 class="font-headline-sm text-lg text-on-surface font-bold">¿Cómo sentiste este ejercicio?</h4>
+                <p class="font-body-sm text-xs text-on-surface-variant mt-0.5">
+                  Toca una opción para continuar. Tu respuesta ajusta la recomendación bioadaptativa.
+                </p>
+              </div>
+
+              <!-- BOTÓN 1: COMPLETADO (VERDE) -->
+              <button id="btn-exercise-completed" type="button" class="w-full p-4 rounded-xl bg-primary/15 hover:bg-primary/25 border-2 border-primary text-primary hover:text-primary-fixed flex items-center justify-between gap-3 transition-all touch-press group shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold shadow-md">
+                    <span class="material-symbols-outlined text-2xl">check_circle</span>
+                  </div>
+                  <div class="flex flex-col text-left">
+                    <span class="font-headline-sm text-sm sm:text-base font-bold text-on-surface group-hover:text-primary transition-colors">
+                      Completado
+                    </span>
+                    <span class="font-body-sm text-[11px] text-on-surface-variant">
+                      Ejecutado con buena técnica y sin dolor punzante
+                    </span>
+                  </div>
+                </div>
+                <span class="material-symbols-outlined text-primary text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+
+              <!-- BOTÓN 2: OMITIDO POR MOLESTIA (AMARILLO / ÁMBAR) -->
+              <button id="btn-exercise-discomfort" type="button" class="w-full p-4 rounded-xl bg-tertiary/15 hover:bg-tertiary/25 border-2 border-tertiary text-tertiary flex items-center justify-between gap-3 transition-all touch-press group shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-tertiary text-on-tertiary flex items-center justify-center font-bold shadow-md">
+                    <span class="material-symbols-outlined text-2xl">sentiment_dissatisfied</span>
+                  </div>
+                  <div class="flex flex-col text-left">
+                    <span class="font-headline-sm text-sm sm:text-base font-bold text-on-surface group-hover:text-tertiary transition-colors">
+                      Omitido por molestia
+                    </span>
+                    <span class="font-body-sm text-[11px] text-on-surface-variant">
+                      Sentí dolor o tracción excesiva en la tibia/sóleo
+                    </span>
+                  </div>
+                </div>
+                <span class="material-symbols-outlined text-tertiary text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+
+              <!-- BOTÓN 3: NO LO REALICÉ (ROJO - Requerimiento específico del usuario) -->
+              <button id="btn-exercise-skipped" type="button" class="w-full p-4 rounded-xl bg-error/15 hover:bg-error/25 border-2 border-error text-error flex items-center justify-between gap-3 transition-all touch-press group shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-error text-on-error flex items-center justify-center font-bold shadow-md">
+                    <span class="material-symbols-outlined text-2xl">cancel</span>
+                  </div>
+                  <div class="flex flex-col text-left">
+                    <span class="font-headline-sm text-sm sm:text-base font-bold text-on-surface group-hover:text-error transition-colors">
+                      No lo realicé
+                    </span>
+                    <span class="font-body-sm text-[11px] text-on-surface-variant">
+                      Falta de tiempo, equipamiento o fatiga general
+                    </span>
+                  </div>
+                </div>
+                <span class="material-symbols-outlined text-error text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+
+            </div>
+
+            <!-- Resumen acumulado de la sesión -->
+            <div class="bg-surface-container-high p-4 rounded-2xl border border-surface-variant/40 flex items-center justify-between text-xs text-on-surface-variant">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-secondary text-base">info</span>
+                Atleta en esterilla (Modo manos libres)
+              </span>
+              <button id="restart-session-btn" type="button" class="text-xs text-primary hover:underline font-semibold">
+                Reiniciar sesión
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BARRA DE NAVEGACIÓN INFERIOR PARA CELULARES (Fixed Mobile Bottom Nav) -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-surface-variant/40 shadow-2xl px-2 py-1.5" id="mobile-bottom-nav">
+    <div class="grid grid-cols-4 max-w-md mx-auto items-center">
+      
+      <!-- Tab 1: Progreso -->
+      <a class="mobile-nav-link text-primary flex flex-col items-center justify-center py-1 transition-all touch-press cursor-pointer" data-view="dashboard" href="#dashboard">
+        <span class="material-symbols-outlined text-2xl mobile-nav-icon transition-transform scale-110">bar_chart</span>
+        <span class="font-label-sm text-[10px] mobile-nav-label font-bold mt-0.5">Progreso</span>
+      </a>
+
+      <!-- Tab 2: Molestia -->
+      <a class="mobile-nav-link text-on-surface-variant flex flex-col items-center justify-center py-1 transition-all touch-press cursor-pointer" data-view="register" href="#register">
+        <span class="material-symbols-outlined text-2xl mobile-nav-icon transition-transform">edit_note</span>
+        <span class="font-label-sm text-[10px] mobile-nav-label mt-0.5">Molestia</span>
+      </a>
+
+      <!-- Tab 3: Rutinas -->
+      <a class="mobile-nav-link text-on-surface-variant flex flex-col items-center justify-center py-1 transition-all touch-press cursor-pointer" data-view="routines" href="#routines">
+        <span class="material-symbols-outlined text-2xl mobile-nav-icon transition-transform">sports_gymnastics</span>
+        <span class="font-label-sm text-[10px] mobile-nav-label mt-0.5">Rutinas</span>
+      </a>
+
+      <!-- Tab 4: Sesión -->
+      <a class="mobile-nav-link text-on-surface-variant flex flex-col items-center justify-center py-1 transition-all touch-press cursor-pointer" data-view="session" href="#session">
+        <span class="material-symbols-outlined text-2xl mobile-nav-icon transition-transform">play_circle</span>
+        <span class="font-label-sm text-[10px] mobile-nav-label mt-0.5">Sesión</span>
+      </a>
+
+    </div>
+  </nav>
+
+  <!-- PIE DE PÁGINA (Footer con descargo médico permanente) -->
+  <footer class="w-full bg-surface-container-lowest border-t border-surface-variant/30 py-6 px-4 sm:px-6 lg:px-8 text-xs text-on-surface-variant">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined text-sm">bolt</span>
+        </span>
+        <span class="font-headline-sm text-sm text-on-surface font-bold">KineticLoad</span>
+        <span class="text-on-surface-variant/60">• Telemetría de Recuperación para Atletas</span>
+      </div>
+      <p class="max-w-xl text-[11px] leading-relaxed text-on-surface-variant/80">
+        <strong>Aviso Legal y Médico:</strong> Aplicación prototipo desarrollada para gestión de cargas y descarga muscular activa. No sustituye la consulta médica, fisioterapia ni diagnóstico por imágenes.
+      </p>
+    </div>
+  </footer>
+
+  <!-- NOTIFICACIÓN TOAST FLOTANTE -->
+  <div id="app-toast" class="hidden fixed bottom-20 lg:bottom-8 right-4 lg:right-8 z-50 bg-surface-container-highest border border-primary/30 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 transition-all duration-300 transform translate-y-12 opacity-0">
+    <span id="toast-icon" class="material-symbols-outlined text-primary text-xl">check_circle</span>
+    <span id="toast-text" class="text-xs sm:text-sm text-on-surface font-medium">Acción completada con éxito</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
