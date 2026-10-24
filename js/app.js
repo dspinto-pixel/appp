@@ -466,7 +466,6 @@
         </div>
       `).join('');
 
-      // Click en cada tarjeta de rutina -> inicia la sesión guiada
       grid.querySelectorAll('.routine-card').forEach(card => {
         card.addEventListener('click', () => {
           Router.navigate('session');
@@ -478,8 +477,302 @@
 
   window.KineticRoutines = RoutinesModule;
 
+  // =========================================================================
+  // 5. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
+  // =========================================================================
+  const SessionModule = {
+    currentIndex: 0,
+    isPlaying: true,
+    timerSeconds: 20,
+    intervalId: null,
+    exerciseResults: {}, // { 0: 'completed' | 'discomfort' | 'skipped' }
+
+    init() {
+      this.initButtons();
+      this.renderStep();
+      this.startLoopTimer();
+
+      window.addEventListener('viewChanged', (e) => {
+        if (e.detail && e.detail.view === 'session') {
+          this.startLoopTimer();
+        } else {
+          this.pauseLoopTimer();
+        }
+      });
+    },
+
+    initButtons() {
+      // 1. Botón Verde: Completado
+      const btnCompleted = document.getElementById('btn-exercise-completed');
+      if (btnCompleted) {
+        btnCompleted.addEventListener('click', () => this.markStep('completed'));
+      }
+
+      // 2. Botón Amarillo: Omitido por molestia
+      const btnDiscomfort = document.getElementById('btn-exercise-discomfort');
+      if (btnDiscomfort) {
+        btnDiscomfort.addEventListener('click', () => this.markStep('discomfort'));
+      }
+
+      // 3. Botón Rojo: No lo realicé (específico del usuario)
+      const btnSkipped = document.getElementById('btn-exercise-skipped');
+      if (btnSkipped) {
+        btnSkipped.addEventListener('click', () => this.markStep('skipped'));
+      }
+
+      // Pausa/Play loop
+      const togglePlayBtn = document.getElementById('toggle-play-btn');
+      if (togglePlayBtn) {
+        togglePlayBtn.addEventListener('click', () => {
+          this.isPlaying = !this.isPlaying;
+          const icon = document.getElementById('play-pause-icon');
+          if (icon) icon.textContent = this.isPlaying ? 'pause' : 'play_arrow';
+          if (this.isPlaying) {
+            this.startLoopTimer();
+          } else {
+            this.pauseLoopTimer();
+          }
+        });
+      }
+
+      // Reiniciar sesión
+      const restartBtn = document.getElementById('restart-session-btn');
+      if (restartBtn) {
+        restartBtn.addEventListener('click', () => this.resetSession());
+      }
+    },
+
+    renderStep() {
+      const exercises = window.KineticData.guidedSessionExercises || [];
+      if (exercises.length === 0) return;
+
+      const ex = exercises[this.currentIndex];
+      if (!ex) return;
+
+      // HUD superior
+      const stepCounter = document.getElementById('session-step-counter');
+      const stepMotivational = document.getElementById('session-step-motivational');
+      const timeRemaining = document.getElementById('session-time-remaining');
+
+      if (stepCounter) stepCounter.textContent = `Paso ${this.currentIndex + 1} de ${exercises.length}:`;
+      
+      const motivationalTexts = [
+        "Iniciando protocolo de descarga en sóleo",
+        "Aislamiento muscular sin tracción tibial",
+        "Restaurando movilidad de tobillo",
+        "Cierre descompresivo final"
+      ];
+      if (stepMotivational) stepMotivational.textContent = motivationalTexts[this.currentIndex] || "Ejecuta con calma";
+      if (timeRemaining) {
+        const remainingSteps = exercises.length - this.currentIndex;
+        timeRemaining.textContent = `~${(remainingSteps * 1.5).toFixed(0).padStart(2, '0')} min`;
+      }
+
+      // Renderizar barra segmentada de progreso
+      this.renderSegmentedBar();
+
+      // Detalles del ejercicio
+      const titleElem = document.getElementById('current-ex-title');
+      const focusElem = document.getElementById('current-ex-focus');
+      const mediaElem = document.getElementById('current-ex-media');
+      const cuesElem = document.getElementById('current-ex-cues');
+      const warningElem = document.getElementById('current-ex-warning');
+
+      if (titleElem) titleElem.textContent = ex.title;
+      if (focusElem) focusElem.textContent = ex.focus;
+      if (mediaElem) {
+        mediaElem.src = ex.videoUrl;
+        mediaElem.alt = ex.title;
+      }
+
+      if (cuesElem) {
+        cuesElem.innerHTML = ex.keyCues.map(cue => `
+          <li class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-primary text-base shrink-0 mt-0.5">check_circle</span>
+            <span>${cue}</span>
+          </li>
+        `).join('');
+      }
+
+      if (warningElem) warningElem.textContent = ex.warningAlert;
+
+      // Resetear timer de 20s para el nuevo ejercicio
+      this.timerSeconds = 20;
+      this.updateLoopDisplay();
+    },
+
+    renderSegmentedBar() {
+      const container = document.getElementById('session-segmented-bar');
+      const exercises = window.KineticData.guidedSessionExercises || [];
+      if (!container) return;
+
+      const shortNames = ["1. Rodillo", "2. Sóleo", "3. Movilidad", "4. Cierre"];
+
+      container.innerHTML = exercises.map((ex, idx) => {
+        const result = this.exerciseResults[idx];
+        let colorClass = "bg-surface-container-high";
+        let iconHtml = "";
+
+        if (result === 'completed') {
+          colorClass = "bg-primary shadow-sm shadow-primary/30";
+          iconHtml = `<span class="material-symbols-outlined text-primary text-xs">check_circle</span>`;
+        } else if (result === 'discomfort') {
+          colorClass = "bg-tertiary shadow-sm shadow-tertiary/30";
+          iconHtml = `<span class="material-symbols-outlined text-tertiary text-xs">warning</span>`;
+        } else if (result === 'skipped') {
+          colorClass = "bg-error shadow-sm shadow-error/30";
+          iconHtml = `<span class="material-symbols-outlined text-error text-xs">cancel</span>`;
+        } else if (idx === this.currentIndex) {
+          colorClass = "bg-secondary";
+          iconHtml = `<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>`;
+        }
+
+        const isCurrent = idx === this.currentIndex;
+
+        return `
+          <div class="flex flex-col gap-1 cursor-pointer" onclick="window.KineticSession.goToStep(${idx})">
+            <div class="h-2 w-full rounded-full ${colorClass} transition-all duration-300"></div>
+            <div class="flex items-center justify-between px-0.5">
+              <span class="font-label-sm text-[10px] uppercase ${isCurrent ? 'text-secondary font-bold' : (result ? 'text-on-surface' : 'text-on-surface-variant/60')}">
+                ${shortNames[idx] || `Paso ${idx + 1}`}
+              </span>
+              ${iconHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    },
+
+    markStep(status) {
+      this.exerciseResults[this.currentIndex] = status;
+
+      const exercises = window.KineticData.guidedSessionExercises || [];
+
+      if (status === 'completed') {
+        window.showToast(`Paso ${this.currentIndex + 1} completado con éxito`, 'success');
+      } else if (status === 'discomfort') {
+        window.showToast(`Paso ${this.currentIndex + 1} omitido por molestia (registrado)`, 'warning');
+      } else if (status === 'skipped') {
+        window.showToast(`Paso ${this.currentIndex + 1} marcado como no realizado`, 'error');
+      }
+
+      if (this.currentIndex < exercises.length - 1) {
+        this.currentIndex++;
+        this.renderStep();
+      } else {
+        // Sesión finalizada
+        this.renderSegmentedBar();
+        this.showSessionSummary();
+      }
+    },
+
+    showSessionSummary() {
+      const results = Object.values(this.exerciseResults);
+      const completedCount = results.filter(r => r === 'completed').length;
+      const discomfortCount = results.filter(r => r === 'discomfort').length;
+      const skippedCount = results.filter(r => r === 'skipped').length;
+
+      const modalHtml = `
+        <div id="session-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
+          <div class="bg-surface-container max-w-md w-full p-6 rounded-2xl border border-surface-variant/50 shadow-2xl flex flex-col gap-4 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center shadow-inner">
+              <span class="material-symbols-outlined text-3xl">sports_score</span>
+            </div>
+            
+            <div>
+              <span class="text-xs text-primary font-bold uppercase tracking-wider">Protocolo Finalizado</span>
+              <h3 class="font-headline-lg text-xl text-on-surface font-bold mt-1">¡Gran trabajo de descarga, Mateo!</h3>
+              <p class="font-body-sm text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+                Tus tejidos se han liberado de sobretensión. Has cuidado tu periostio sin perder adaptación aeróbica.
+              </p>
+            </div>
+
+            <!-- Resumen numérico -->
+            <div class="grid grid-cols-3 gap-2 py-3 border-y border-surface-variant/30">
+              <div class="bg-surface-container-low p-2.5 rounded-xl">
+                <span class="text-lg font-extrabold text-primary">${completedCount}</span>
+                <span class="block text-[10px] uppercase text-on-surface-variant font-semibold">Completados</span>
+              </div>
+              <div class="bg-surface-container-low p-2.5 rounded-xl">
+                <span class="text-lg font-extrabold text-tertiary">${discomfortCount}</span>
+                <span class="block text-[10px] uppercase text-on-surface-variant font-semibold">Molestia</span>
+              </div>
+              <div class="bg-surface-container-low p-2.5 rounded-xl">
+                <span class="text-lg font-extrabold text-error">${skippedCount}</span>
+                <span class="block text-[10px] uppercase text-on-surface-variant font-semibold">No realizó</span>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary text-left">
+              <strong>Consejo de Telemetría:</strong> Aplica crioterapia local durante 12 minutos y descansa las piernas elevadas.
+            </div>
+
+            <div class="flex flex-col gap-2 pt-2">
+              <button type="button" class="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md" onclick="document.getElementById('session-modal').remove(); window.KineticRouter.navigate('dashboard');">
+                Volver a Mi Progreso
+              </button>
+              <button type="button" class="w-full py-2.5 rounded-xl bg-surface-container-highest text-on-surface font-semibold text-xs" onclick="document.getElementById('session-modal').remove(); window.KineticSession.resetSession();">
+                Repetir protocolo
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    goToStep(index) {
+      const exercises = window.KineticData.guidedSessionExercises || [];
+      if (index >= 0 && index < exercises.length) {
+        this.currentIndex = index;
+        this.renderStep();
+      }
+    },
+
+    resetSession() {
+      this.currentIndex = 0;
+      this.exerciseResults = {};
+      this.renderStep();
+      window.showToast('Sesión reiniciada desde el paso 1', 'success');
+    },
+
+    startLoopTimer() {
+      this.pauseLoopTimer();
+      this.intervalId = setInterval(() => {
+        if (!this.isPlaying) return;
+
+        this.timerSeconds--;
+        if (this.timerSeconds < 0) {
+          this.timerSeconds = 20; // Bucle continuo de 20s
+        }
+        this.updateLoopDisplay();
+      }, 1000);
+    },
+
+    pauseLoopTimer() {
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+    },
+
+    updateLoopDisplay() {
+      const display = document.getElementById('loop-timer-display');
+      const progress = document.getElementById('video-loop-progress');
+
+      if (display) display.textContent = `${this.timerSeconds}s`;
+      if (progress) {
+        const percentage = ((20 - this.timerSeconds) / 20) * 100;
+        progress.style.width = `${percentage}%`;
+      }
+    }
+  };
+
+  window.KineticSession = SessionModule;
+
   // ==========================================
-  // 5. AVISO MÉDICO & NOTIFICACIONES
+  // 6. AVISO MÉDICO & NOTIFICACIONES
   // ==========================================
   function initMedicalDisclaimer() {
     const banner = document.getElementById('prototype-medical-banner');
@@ -518,11 +811,12 @@
     }, 3200);
   };
 
-  // Inicialización
+  // Inicialización global
   document.addEventListener('DOMContentLoaded', () => {
     Router.init();
     RegisterModule.init();
     RoutinesModule.init();
+    SessionModule.init();
     initMedicalDisclaimer();
   });
 })();
