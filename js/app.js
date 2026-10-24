@@ -1,9 +1,11 @@
-// KineticLoad - Lógica Principal de la Aplicación y Navegación
+// KineticLoad - Lógica Principal, Navegación y Gestores de Funciones
 
 (function () {
   'use strict';
 
-  // Gestor de Almacenamiento Local (LocalStorage)
+  // ==========================================
+  // 1. GESTOR DE ALMACENAMIENTO (LocalStorage)
+  // ==========================================
   const Storage = {
     KEY_HISTORY: 'kineticload_history',
     KEY_SESSION: 'kineticload_session_progress',
@@ -30,17 +32,23 @@
       history.push(entry);
       this.saveHistory(history);
       return history;
+    },
+
+    getLatestLog() {
+      const history = this.getHistory();
+      return history.length > 0 ? history[history.length - 1] : null;
     }
   };
 
   window.KineticStorage = Storage;
 
-  // Sistema de Enrutamiento y Navegación (Escritorio + Móvil)
+  // ==========================================
+  // 2. ENRUTADOR Y NAVEGACIÓN (Desktop & Mobile)
+  // ==========================================
   const Router = {
     currentView: 'dashboard',
 
     init() {
-      // Eventos en enlaces con data-view
       document.querySelectorAll('[data-view]').forEach(el => {
         el.addEventListener('click', (e) => {
           e.preventDefault();
@@ -51,7 +59,6 @@
         });
       });
 
-      // Escuchar cambios de hash en URL
       window.addEventListener('hashchange', () => {
         const hash = window.location.hash.replace('#', '');
         if (hash && ['dashboard', 'register', 'routines', 'session'].includes(hash)) {
@@ -59,7 +66,6 @@
         }
       });
 
-      // Navegación inicial según hash o por defecto a dashboard
       const initialHash = window.location.hash.replace('#', '');
       if (initialHash && ['dashboard', 'register', 'routines', 'session'].includes(initialHash)) {
         this.navigate(initialHash, false);
@@ -74,16 +80,14 @@
 
       this.currentView = viewId;
 
-      // Ocultar todas las vistas y mostrar la seleccionada
       document.querySelectorAll('.app-view').forEach(view => {
         view.classList.remove('active');
       });
       targetView.classList.add('active');
 
-      // Scroll al inicio suave
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // Actualizar estado en barra de escritorio
+      // Actualizar links de escritorio
       document.querySelectorAll('.desktop-nav-link').forEach(link => {
         const viewAttr = link.getAttribute('data-view');
         if (viewAttr === viewId) {
@@ -95,7 +99,7 @@
         }
       });
 
-      // Actualizar estado en barra inferior móvil
+      // Actualizar links de celular
       document.querySelectorAll('.mobile-nav-link').forEach(link => {
         const viewAttr = link.getAttribute('data-view');
         const icon = link.querySelector('.mobile-nav-icon');
@@ -117,14 +121,235 @@
         window.location.hash = viewId;
       }
 
-      // Disparar evento para que cada vista actualice sus componentes
       window.dispatchEvent(new CustomEvent('viewChanged', { detail: { view: viewId } }));
     }
   };
 
   window.KineticRouter = Router;
 
-  // Banner de Prototipo y Descargo Médico
+  // ==========================================
+  // 3. FUNCIÓN 1: REGISTRAR MOLESTIA & RPE
+  // ==========================================
+  const RegisterModule = {
+    selectedSport: 'running',
+    selectedZone: 'Espinilla (Tibia derecha)',
+
+    init() {
+      this.initSportSelector();
+      this.initZoneSelector();
+      this.initPainSlider();
+      this.initRpeSlider();
+      this.initSaveButton();
+    },
+
+    initSportSelector() {
+      const sportBtns = document.querySelectorAll('.sport-btn');
+      sportBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          sportBtns.forEach(b => {
+            b.classList.remove('active', 'bg-primary', 'text-on-primary', 'font-bold', 'shadow-sm');
+            b.classList.add('text-on-surface-variant', 'font-medium');
+          });
+          btn.classList.add('active', 'bg-primary', 'text-on-primary', 'font-bold', 'shadow-sm');
+          btn.classList.remove('text-on-surface-variant', 'font-medium');
+          this.selectedSport = btn.getAttribute('data-sport') || 'running';
+        });
+      });
+    },
+
+    initZoneSelector() {
+      const chips = document.querySelectorAll('.zone-chip');
+      const pins = document.querySelectorAll('.body-zone-pin');
+      const svgZones = document.querySelectorAll('.body-zone-svg');
+
+      const setZone = (zoneName) => {
+        this.selectedZone = zoneName;
+
+        // Actualizar chips
+        chips.forEach(chip => {
+          const z = chip.getAttribute('data-zone');
+          if (z === zoneName) {
+            chip.classList.add('active', 'bg-tertiary/20', 'text-tertiary', 'font-semibold', 'border-tertiary/40');
+            chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant', 'border-surface-variant/40');
+          } else {
+            chip.classList.remove('active', 'bg-tertiary/20', 'text-tertiary', 'font-semibold', 'border-tertiary/40');
+            chip.classList.add('bg-surface-container-high', 'text-on-surface-variant', 'border-surface-variant/40');
+          }
+        });
+
+        // Actualizar pins
+        pins.forEach(pin => {
+          const pz = pin.getAttribute('data-zone');
+          if (pz === zoneName) {
+            pin.classList.add('scale-110');
+            const ripple = pin.querySelector('.animate-ping');
+            if (ripple) ripple.classList.remove('hidden');
+          } else {
+            pin.classList.remove('scale-110');
+            const ripple = pin.querySelector('.animate-ping');
+            if (ripple) ripple.classList.add('hidden');
+          }
+        });
+      };
+
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const zone = chip.getAttribute('data-zone');
+          if (zone) setZone(zone);
+        });
+      });
+
+      pins.forEach(pin => {
+        pin.addEventListener('click', () => {
+          const zone = pin.getAttribute('data-zone');
+          if (zone) setZone(zone);
+        });
+      });
+
+      svgZones.forEach(zoneSvg => {
+        zoneSvg.addEventListener('click', () => {
+          const zone = zoneSvg.getAttribute('data-zone');
+          if (zone) setZone(zone);
+        });
+      });
+    },
+
+    initPainSlider() {
+      const slider = document.getElementById('pain-range');
+      const display = document.getElementById('pain-display-val');
+      const feedbackBox = document.getElementById('pain-feedback-box');
+      const feedbackText = document.getElementById('pain-feedback-text');
+      if (!slider || !display) return;
+
+      const updateFeedback = (val) => {
+        display.textContent = val;
+        const num = parseInt(val, 10);
+
+        if (num <= 4) {
+          display.className = 'text-2xl font-extrabold text-primary';
+          slider.style.accentColor = '#4edea3';
+          if (feedbackBox) {
+            feedbackBox.className = 'p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-medium flex items-center gap-2';
+            feedbackText.textContent = 'Dolor tolerable en zona verde (≤ 4). Permite mantener entrenamiento con adaptaciones sin impacto.';
+          }
+        } else if (num <= 6) {
+          display.className = 'text-2xl font-extrabold text-tertiary';
+          slider.style.accentColor = '#ffb95f';
+          if (feedbackBox) {
+            feedbackBox.className = 'p-3 rounded-xl bg-tertiary/10 border border-tertiary/20 text-tertiary text-xs font-medium flex items-center gap-2';
+            feedbackText.textContent = 'Alerta: Dolor moderado (5-6). Recomendado sustituir carrera por rodillo/ciclismo suave y automasaje.';
+          }
+        } else {
+          display.className = 'text-2xl font-extrabold text-error';
+          slider.style.accentColor = '#ffb4ab';
+          if (feedbackBox) {
+            feedbackBox.className = 'p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs font-medium flex items-center gap-2';
+            feedbackText.textContent = 'Atención: Dolor severo (> 6). Detén inmediatamente el impacto mecánico y consulta a tu fisioterapeuta.';
+          }
+        }
+      };
+
+      slider.addEventListener('input', (e) => updateFeedback(e.target.value));
+      updateFeedback(slider.value);
+    },
+
+    initRpeSlider() {
+      const slider = document.getElementById('rpe-range');
+      const display = document.getElementById('rpe-display-val');
+      const feedbackText = document.getElementById('rpe-feedback-text');
+      if (!slider || !display) return;
+
+      const rpeDescriptions = {
+        1: '"Paseo muy suave, casi sin elevación de pulsaciones."',
+        2: '"Esfuerzo muy ligero, conversación fluida y continua."',
+        3: '"Ritmo aeróbico cómodo, respiración fácil."',
+        4: '"Ritmo de rodaje constante, esfuerzo controlado."',
+        5: '"Ritmo vivo, sudoración leve, respiración profunda."',
+        6: '"Podía mantener frases cortas, ritmo de control de umbral aeróbico."',
+        7: '"Esfuerzo vigoroso, respiración acelerada, requiere concentración."',
+        8: '"Esfuerzo duro de series, conversación monosilábica."',
+        9: '"Muy duro, cerca del límite, difícil sostener más de unos minutos."',
+        10: '"Esfuerzo agónico máximo, esprint final al 100%."'
+      };
+
+      const updateRpe = (val) => {
+        display.textContent = val;
+        const num = parseInt(val, 10);
+        if (feedbackText && rpeDescriptions[num]) {
+          feedbackText.textContent = rpeDescriptions[num];
+        }
+      };
+
+      slider.addEventListener('input', (e) => updateRpe(e.target.value));
+      updateRpe(slider.value);
+    },
+
+    initSaveButton() {
+      const saveBtn = document.getElementById('save-log-btn');
+      if (!saveBtn) return;
+
+      saveBtn.addEventListener('click', () => {
+        const painVal = parseFloat(document.getElementById('pain-range').value) || 3;
+        const rpeVal = parseFloat(document.getElementById('rpe-range').value) || 6;
+        const notes = document.getElementById('register-notes')?.value || '';
+
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        const newEntry = {
+          day: `Hoy (${timeStr})`,
+          load: this.selectedSport === 'ciclismo' ? 18 : 8.5,
+          pain: painVal,
+          rpe: rpeVal,
+          sport: this.selectedSport,
+          zone: this.selectedZone,
+          notes: notes,
+          activity: `${this.selectedSport.toUpperCase()} • ${this.selectedZone}`
+        };
+
+        Storage.addLog(newEntry);
+
+        // Actualizar métricas visuales en el Dashboard
+        this.updateDashboardMetrics(newEntry);
+
+        // Notificación Toast
+        window.showToast(`¡Registro guardado! Dolor: ${painVal}/10 • RPE: ${rpeVal}/10`, 'success');
+
+        // Redirigir al Dashboard tras 600ms
+        setTimeout(() => {
+          Router.navigate('dashboard');
+        }, 600);
+      });
+    },
+
+    updateDashboardMetrics(latest) {
+      const rpeElem = document.getElementById('metric-rpe-val');
+      const painElem = document.getElementById('metric-pain-val');
+      const painStatusElem = document.getElementById('metric-pain-status');
+
+      if (rpeElem) rpeElem.textContent = latest.rpe.toFixed(1);
+      if (painElem) painElem.textContent = latest.pain.toFixed(1);
+
+      if (painStatusElem) {
+        if (latest.pain <= 4) {
+          painStatusElem.textContent = 'En Zona Segura (≤ 4)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs mt-1 font-medium';
+        } else if (latest.pain <= 6) {
+          painStatusElem.textContent = 'Sobrecarga Moderada (5-6)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs mt-1 font-medium';
+        } else {
+          painStatusElem.textContent = 'Alerta Inflamatoria (> 6)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-error/10 text-error text-xs mt-1 font-medium';
+        }
+      }
+    }
+  };
+
+  window.KineticRegister = RegisterModule;
+
+  // ==========================================
+  // 4. AVISO MÉDICO & NOTIFICACIONES
+  // ==========================================
   function initMedicalDisclaimer() {
     const banner = document.getElementById('prototype-medical-banner');
     const dismissBtn = document.getElementById('dismiss-banner-btn');
@@ -141,7 +366,6 @@
     }
   }
 
-  // Notificaciones Toast
   window.showToast = function (message, type = 'success') {
     const toast = document.getElementById('app-toast');
     const toastText = document.getElementById('toast-text');
@@ -163,9 +387,10 @@
     }, 3200);
   };
 
-  // Inicialización al cargar el DOM
+  // Inicialización
   document.addEventListener('DOMContentLoaded', () => {
     Router.init();
+    RegisterModule.init();
     initMedicalDisclaimer();
   });
 })();
