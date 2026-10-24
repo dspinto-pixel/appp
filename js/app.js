@@ -165,7 +165,6 @@
       const setZone = (zoneName) => {
         this.selectedZone = zoneName;
 
-        // Actualizar chips
         chips.forEach(chip => {
           const z = chip.getAttribute('data-zone');
           if (z === zoneName) {
@@ -177,7 +176,6 @@
           }
         });
 
-        // Actualizar pins
         pins.forEach(pin => {
           const pz = pin.getAttribute('data-zone');
           if (pz === zoneName) {
@@ -308,14 +306,10 @@
         };
 
         Storage.addLog(newEntry);
-
-        // Actualizar métricas visuales en el Dashboard
         this.updateDashboardMetrics(newEntry);
 
-        // Notificación Toast
         window.showToast(`¡Registro guardado! Dolor: ${painVal}/10 • RPE: ${rpeVal}/10`, 'success');
 
-        // Redirigir al Dashboard tras 600ms
         setTimeout(() => {
           Router.navigate('dashboard');
         }, 600);
@@ -348,7 +342,144 @@
   window.KineticRegister = RegisterModule;
 
   // ==========================================
-  // 4. AVISO MÉDICO & NOTIFICACIONES
+  // 4. FUNCIÓN 2: BIBLIOTECA & FILTROS (Buscar)
+  // ==========================================
+  const RoutinesModule = {
+    currentFilter: 'all',
+    searchQuery: '',
+
+    init() {
+      this.initSearch();
+      this.initFilters();
+      this.render();
+    },
+
+    initSearch() {
+      const searchInput = document.getElementById('routine-search-input');
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (!searchInput) return;
+
+      searchInput.addEventListener('input', (e) => {
+        this.searchQuery = e.target.value.toLowerCase().trim();
+        if (clearBtn) {
+          if (this.searchQuery.length > 0) {
+            clearBtn.classList.remove('hidden');
+          } else {
+            clearBtn.classList.add('hidden');
+          }
+        }
+        this.render();
+      });
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          this.searchQuery = '';
+          clearBtn.classList.add('hidden');
+          this.render();
+        });
+      }
+    },
+
+    initFilters() {
+      const filterChips = document.querySelectorAll('.routine-filter-chip');
+      filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach(c => {
+            c.classList.remove('active', 'bg-primary', 'text-on-primary', 'font-bold', 'shadow-sm');
+            c.classList.add('bg-surface-container-high', 'text-on-surface-variant', 'border-surface-variant/40', 'font-medium');
+          });
+          chip.classList.add('active', 'bg-primary', 'text-on-primary', 'font-bold', 'shadow-sm');
+          chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant', 'border-surface-variant/40', 'font-medium');
+
+          this.currentFilter = chip.getAttribute('data-filter') || 'all';
+          this.render();
+        });
+      });
+    },
+
+    render() {
+      const grid = document.getElementById('routines-grid');
+      if (!grid) return;
+
+      const routines = window.KineticData.routines || [];
+      const filtered = routines.filter(r => {
+        const matchesFilter = this.currentFilter === 'all' || r.discipline === this.currentFilter;
+        const matchesSearch = !this.searchQuery || 
+          r.title.toLowerCase().includes(this.searchQuery) ||
+          r.description.toLowerCase().includes(this.searchQuery) ||
+          r.category.toLowerCase().includes(this.searchQuery) ||
+          r.disciplineLabel.toLowerCase().includes(this.searchQuery) ||
+          r.equipment.toLowerCase().includes(this.searchQuery);
+
+        return matchesFilter && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-8 rounded-2xl bg-surface-container border border-surface-variant/40 text-center flex flex-col items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-4xl text-on-surface-variant">search_off</span>
+            <h4 class="font-headline-sm text-base text-on-surface font-bold">No encontramos rutinas que coincidan</h4>
+            <p class="font-body-sm text-xs text-on-surface-variant">Prueba con palabras como "gemelos", "sóleo", "isometría" o cambia el filtro de deporte.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(r => `
+        <div class="routine-card bg-surface-container p-4 rounded-2xl border border-surface-variant/40 flex flex-col justify-between group hover:border-primary/50 transition-all cursor-pointer shadow-sm" data-routine-id="${r.id}">
+          <div class="relative w-full h-44 rounded-xl overflow-hidden mb-3 bg-surface-container-lowest">
+            <img src="${r.image}" alt="${r.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <div class="absolute top-2.5 right-2.5 bg-surface-container-lowest/85 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-bold text-primary flex items-center gap-1 shadow-md">
+              <span class="material-symbols-outlined text-xs">timer</span> ${r.duration}
+            </div>
+            <div class="absolute bottom-2.5 left-2.5 ${r.impact.includes('Cero') ? 'bg-primary text-on-primary' : 'bg-secondary text-on-secondary'} text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow">
+              ${r.impact}
+            </div>
+          </div>
+          
+          <div class="flex flex-col flex-1 justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] uppercase tracking-wider text-secondary font-bold">${r.disciplineLabel}</span>
+                <span class="text-on-surface-variant text-[10px]">•</span>
+                <span class="text-[10px] uppercase tracking-wider text-on-surface-variant">${r.category}</span>
+              </div>
+              <h4 class="font-headline-sm text-base font-bold text-on-surface group-hover:text-primary transition-colors">
+                ${r.title}
+              </h4>
+              <p class="font-body-sm text-xs text-on-surface-variant mt-1.5 leading-relaxed line-clamp-2">
+                ${r.description}
+              </p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-surface-variant/30 flex items-center justify-between">
+              <span class="text-xs text-on-surface-variant flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-primary">fitness_center</span> ${r.equipment}
+              </span>
+              <button type="button" class="px-3.5 py-1.5 rounded-xl bg-surface-container-highest group-hover:bg-primary group-hover:text-on-primary text-xs font-bold text-on-surface flex items-center gap-1.5 transition-all">
+                <span>Comenzar</span>
+                <span class="material-symbols-outlined text-sm">play_arrow</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Click en cada tarjeta de rutina -> inicia la sesión guiada
+      grid.querySelectorAll('.routine-card').forEach(card => {
+        card.addEventListener('click', () => {
+          Router.navigate('session');
+          window.showToast('Iniciando sesión guiada para esta rutina', 'success');
+        });
+      });
+    }
+  };
+
+  window.KineticRoutines = RoutinesModule;
+
+  // ==========================================
+  // 5. AVISO MÉDICO & NOTIFICACIONES
   // ==========================================
   function initMedicalDisclaimer() {
     const banner = document.getElementById('prototype-medical-banner');
@@ -391,6 +522,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     Router.init();
     RegisterModule.init();
+    RoutinesModule.init();
     initMedicalDisclaimer();
   });
 })();
