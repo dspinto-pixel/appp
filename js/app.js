@@ -128,7 +128,173 @@
   window.KineticRouter = Router;
 
   // ==========================================
-  // 3. FUNCIÓN 1: REGISTRAR MOLESTIA & RPE
+  // 3. FUNCIÓN 5: DASHBOARD Y GRÁFICO LINEAL
+  // ==========================================
+  const DashboardModule = {
+    init() {
+      this.renderMetrics();
+      this.renderLineChart();
+
+      window.addEventListener('viewChanged', (e) => {
+        if (e.detail && e.detail.view === 'dashboard') {
+          this.renderMetrics();
+          this.renderLineChart();
+        }
+      });
+    },
+
+    renderMetrics() {
+      const history = Storage.getHistory();
+      const latest = history.length > 0 ? history[history.length - 1] : null;
+      if (!latest) return;
+
+      const rpeElem = document.getElementById('metric-rpe-val');
+      const painElem = document.getElementById('metric-pain-val');
+      const painStatusElem = document.getElementById('metric-pain-status');
+
+      if (rpeElem) rpeElem.textContent = Number(latest.rpe).toFixed(1);
+      if (painElem) painElem.textContent = Number(latest.pain).toFixed(1);
+
+      if (painStatusElem) {
+        if (latest.pain <= 4) {
+          painStatusElem.textContent = 'En Zona Segura (≤ 4)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs mt-1 font-medium';
+        } else if (latest.pain <= 6) {
+          painStatusElem.textContent = 'Sobrecarga Moderada (5-6)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs mt-1 font-medium';
+        } else {
+          painStatusElem.textContent = 'Alerta Inflamatoria (> 6)';
+          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-error/10 text-error text-xs mt-1 font-medium';
+        }
+      }
+    },
+
+    renderLineChart() {
+      const container = document.getElementById('chart-container');
+      if (!container) return;
+
+      const history = Storage.getHistory();
+      if (!history || history.length === 0) return;
+
+      // Usar los últimos 14 registros
+      const data = history.slice(-14);
+
+      const width = 700;
+      const height = 240;
+      const padLeft = 30;
+      const padRight = 30;
+      const padTop = 25;
+      const padBottom = 35;
+
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+
+      const maxLoad = Math.max(...data.map(d => Number(d.load) || 0), 25);
+      const maxPain = 10;
+
+      const stepX = data.length > 1 ? chartW / (data.length - 1) : chartW;
+
+      // Puntos para la línea de Carga (Cian)
+      const loadPoints = data.map((d, i) => {
+        const x = padLeft + i * stepX;
+        const norm = (Number(d.load) || 0) / maxLoad;
+        const y = padTop + chartH - (norm * chartH);
+        return { x, y, val: d.load, day: d.day, activity: d.activity };
+      });
+
+      // Puntos para la línea de Dolor EVA (Verde / Ámbar / Rojo)
+      const painPoints = data.map((d, i) => {
+        const x = padLeft + i * stepX;
+        const norm = (Number(d.pain) || 0) / maxPain;
+        const y = padTop + chartH - (norm * chartH);
+        return { x, y, val: d.pain, day: d.day, activity: d.activity };
+      });
+
+      // Generar path SVG para Carga
+      const loadPathD = loadPoints.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+
+      // Generar path SVG suavizado para Dolor
+      let painPathD = `M ${painPoints[0].x.toFixed(1)} ${painPoints[0].y.toFixed(1)}`;
+      for (let i = 0; i < painPoints.length - 1; i++) {
+        const p0 = painPoints[i];
+        const p1 = painPoints[i + 1];
+        const mx = ((p0.x + p1.x) / 2).toFixed(1);
+        painPathD += ` Q ${p0.x.toFixed(1)} ${p0.y.toFixed(1)}, ${mx} ${((p0.y + p1.y) / 2).toFixed(1)} T ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+      }
+
+      // Área sombreada bajo la curva de dolor
+      const painAreaD = `${painPathD} L ${painPoints[painPoints.length - 1].x.toFixed(1)} ${(padTop + chartH).toFixed(1)} L ${painPoints[0].x.toFixed(1)} ${(padTop + chartH).toFixed(1)} Z`;
+
+      // Posición Y de la línea de Umbral Seguro (EVA = 4)
+      const safeThresholdY = padTop + chartH - ((4 / maxPain) * chartH);
+
+      container.innerHTML = `
+        <!-- Zona Verde de Retorno Seguro de fondo -->
+        <div class="absolute inset-x-0 bottom-0 bg-primary/5 border-t border-dashed border-primary/40 rounded-lg pointer-events-none flex items-start px-3 pt-1" style="height: ${(chartH * 0.4).toFixed(0)}px;">
+          <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Zona de Retorno Seguro (Molestia controlada ≤ 4)</span>
+        </div>
+
+        <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 ${width} ${height}">
+          <defs>
+            <linearGradient id="painGradDynamic" x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffb95f" stop-opacity="0.25"></stop>
+              <stop offset="100%" stop-color="#4edea3" stop-opacity="0.0"></stop>
+            </linearGradient>
+          </defs>
+
+          <!-- Guías de fondo horizontales -->
+          <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${padTop}" y2="${padTop}"></line>
+          <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH * 0.33).toFixed(1)}" y2="${(padTop + chartH * 0.33).toFixed(1)}"></line>
+          <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH * 0.66).toFixed(1)}" y2="${(padTop + chartH * 0.66).toFixed(1)}"></line>
+          
+          <!-- Línea de Umbral Seguro (EVA = 4) -->
+          <line stroke="#4edea3" stroke-dasharray="5 5" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${safeThresholdY.toFixed(1)}" y2="${safeThresholdY.toFixed(1)}"></line>
+          
+          <!-- Eje X inferior -->
+          <line stroke="#2e3545" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH).toFixed(1)}" y2="${(padTop + chartH).toFixed(1)}"></line>
+
+          <!-- ÁREA SOMBREADA BAJO DOLOR -->
+          <path d="${painAreaD}" fill="url(#painGradDynamic)"></path>
+
+          <!-- LÍNEA 1: CARGA DE ENTRENAMIENTO (CIAN) -->
+          <path d="${loadPathD}" fill="none" stroke="#4cd7f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"></path>
+
+          <!-- LÍNEA 2: DOLOR TIBIAL EVA (VERDE / ÁMBAR) -->
+          <path d="${painPathD}" fill="none" stroke="#4edea3" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
+
+          <!-- PUNTOS INTERACTIVOS: CARGA (Cian) -->
+          ${loadPoints.map((p, i) => `
+            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#4cd7f6" stroke="#003640" stroke-width="1.5" class="cursor-pointer" onclick="window.showToast('${p.day}: Carga ${p.val}km • ${p.activity || ""}', 'info')">
+              <title>${p.day}: Carga ${p.val}km</title>
+            </circle>
+          `).join('')}
+
+          <!-- PUNTOS INTERACTIVOS: DOLOR EVA (Semáforo) -->
+          ${painPoints.map((p, i) => {
+            const isHigh = p.val > 6;
+            const isMedium = p.val > 4 && p.val <= 6;
+            const color = isHigh ? '#ffb4ab' : (isMedium ? '#ffb95f' : '#4edea3');
+            const stroke = isHigh ? '#93000a' : (isMedium ? '#653e00' : '#003824');
+            const radius = (i === painPoints.length - 1 || isHigh) ? 6 : 4;
+
+            return `
+              <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${radius}" fill="${color}" stroke="${stroke}" stroke-width="2" class="cursor-pointer hover:scale-125 transition-transform" onclick="window.showToast('${p.day}: Dolor ${p.val}/10 • ${p.activity || ""}', '${isHigh ? 'error' : (isMedium ? 'warning' : 'success')}')">
+                <title>${p.day}: Dolor EVA ${p.val}/10</title>
+              </circle>
+            `;
+          }).join('')}
+        </svg>
+
+        <!-- Tooltip flotante interactivo -->
+        <div id="chart-tooltip" class="hidden absolute pointer-events-none bg-surface-container-highest border border-surface-variant px-2.5 py-1.5 rounded-lg shadow-xl text-xs z-30"></div>
+      `;
+    }
+  };
+
+  window.KineticDashboard = DashboardModule;
+
+  // ==========================================
+  // 4. FUNCIÓN 1: REGISTRAR MOLESTIA & RPE
   // ==========================================
   const RegisterModule = {
     selectedSport: 'running',
@@ -306,7 +472,8 @@
         };
 
         Storage.addLog(newEntry);
-        this.updateDashboardMetrics(newEntry);
+        DashboardModule.renderMetrics();
+        DashboardModule.renderLineChart();
 
         window.showToast(`¡Registro guardado! Dolor: ${painVal}/10 • RPE: ${rpeVal}/10`, 'success');
 
@@ -314,35 +481,13 @@
           Router.navigate('dashboard');
         }, 600);
       });
-    },
-
-    updateDashboardMetrics(latest) {
-      const rpeElem = document.getElementById('metric-rpe-val');
-      const painElem = document.getElementById('metric-pain-val');
-      const painStatusElem = document.getElementById('metric-pain-status');
-
-      if (rpeElem) rpeElem.textContent = latest.rpe.toFixed(1);
-      if (painElem) painElem.textContent = latest.pain.toFixed(1);
-
-      if (painStatusElem) {
-        if (latest.pain <= 4) {
-          painStatusElem.textContent = 'En Zona Segura (≤ 4)';
-          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs mt-1 font-medium';
-        } else if (latest.pain <= 6) {
-          painStatusElem.textContent = 'Sobrecarga Moderada (5-6)';
-          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs mt-1 font-medium';
-        } else {
-          painStatusElem.textContent = 'Alerta Inflamatoria (> 6)';
-          painStatusElem.parentElement.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-error/10 text-error text-xs mt-1 font-medium';
-        }
-      }
     }
   };
 
   window.KineticRegister = RegisterModule;
 
   // ==========================================
-  // 4. FUNCIÓN 2: BIBLIOTECA & FILTROS (Buscar)
+  // 5. FUNCIÓN 2: BIBLIOTECA & FILTROS (Buscar)
   // ==========================================
   const RoutinesModule = {
     currentFilter: 'all',
@@ -478,14 +623,14 @@
   window.KineticRoutines = RoutinesModule;
 
   // =========================================================================
-  // 5. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
+  // 6. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
   // =========================================================================
   const SessionModule = {
     currentIndex: 0,
     isPlaying: true,
     timerSeconds: 20,
     intervalId: null,
-    exerciseResults: {}, // { 0: 'completed' | 'discomfort' | 'skipped' }
+    exerciseResults: {},
 
     init() {
       this.initButtons();
@@ -549,7 +694,6 @@
       const ex = exercises[this.currentIndex];
       if (!ex) return;
 
-      // HUD superior
       const stepCounter = document.getElementById('session-step-counter');
       const stepMotivational = document.getElementById('session-step-motivational');
       const timeRemaining = document.getElementById('session-time-remaining');
@@ -568,10 +712,8 @@
         timeRemaining.textContent = `~${(remainingSteps * 1.5).toFixed(0).padStart(2, '0')} min`;
       }
 
-      // Renderizar barra segmentada de progreso
       this.renderSegmentedBar();
 
-      // Detalles del ejercicio
       const titleElem = document.getElementById('current-ex-title');
       const focusElem = document.getElementById('current-ex-focus');
       const mediaElem = document.getElementById('current-ex-media');
@@ -596,7 +738,6 @@
 
       if (warningElem) warningElem.textContent = ex.warningAlert;
 
-      // Resetear timer de 20s para el nuevo ejercicio
       this.timerSeconds = 20;
       this.updateLoopDisplay();
     },
@@ -660,7 +801,6 @@
         this.currentIndex++;
         this.renderStep();
       } else {
-        // Sesión finalizada
         this.renderSegmentedBar();
         this.showSessionSummary();
       }
@@ -687,7 +827,6 @@
               </p>
             </div>
 
-            <!-- Resumen numérico -->
             <div class="grid grid-cols-3 gap-2 py-3 border-y border-surface-variant/30">
               <div class="bg-surface-container-low p-2.5 rounded-xl">
                 <span class="text-lg font-extrabold text-primary">${completedCount}</span>
@@ -744,7 +883,7 @@
 
         this.timerSeconds--;
         if (this.timerSeconds < 0) {
-          this.timerSeconds = 20; // Bucle continuo de 20s
+          this.timerSeconds = 20;
         }
         this.updateLoopDisplay();
       }, 1000);
@@ -772,7 +911,7 @@
   window.KineticSession = SessionModule;
 
   // ==========================================
-  // 6. AVISO MÉDICO & NOTIFICACIONES
+  // 7. AVISO MÉDICO & NOTIFICACIONES
   // ==========================================
   function initMedicalDisclaimer() {
     const banner = document.getElementById('prototype-medical-banner');
@@ -814,6 +953,7 @@
   // Inicialización global
   document.addEventListener('DOMContentLoaded', () => {
     Router.init();
+    DashboardModule.init();
     RegisterModule.init();
     RoutinesModule.init();
     SessionModule.init();
