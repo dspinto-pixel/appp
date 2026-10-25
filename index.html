@@ -229,7 +229,7 @@
           </div>
         </div>
 
-        <!-- 4 Tarjetas de Métricas Clave (Bento Grid) -->
+        <!-- 4 Tarjetas de Métricas Clave (Bento Grid Dinámico por Atleta) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Card 1: RPE -->
           <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
@@ -249,7 +249,7 @@
               </div>
             </div>
             <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
-              <div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 60%;"></div>
+              <div id="metric-rpe-bar" class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 60%;"></div>
             </div>
           </div>
 
@@ -262,7 +262,7 @@
             </div>
             <div class="my-2">
               <div class="flex items-baseline gap-1">
-                <span id="metric-pain-val" class="font-headline-xl text-3xl font-extrabold text-primary">2.4</span>
+                <span id="metric-pain-val" class="font-headline-xl text-3xl font-extrabold text-primary">3.0</span>
                 <span class="text-sm text-on-surface-variant font-medium">/ 10</span>
               </div>
               <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs mt-1 font-medium">
@@ -271,51 +271,51 @@
               </div>
             </div>
             <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
-              <div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 24%;"></div>
+              <div id="metric-pain-bar" class="bg-primary h-full rounded-full transition-all duration-500" style="width: 30%;"></div>
             </div>
           </div>
 
-          <!-- Card 3: Meta Semanal -->
+          <!-- Card 3: Meta Semanal (Dinámica por Paciente) -->
           <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary rounded-l-2xl"></div>
             <div class="flex items-center justify-between mb-2">
-              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Meta de Descarga</span>
+              <span id="metric-weekly-title" class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Meta de Descarga</span>
               <span class="material-symbols-outlined text-tertiary text-xl">trophy</span>
             </div>
             <div class="my-2">
               <div class="flex items-baseline gap-1">
-                <span class="font-headline-xl text-3xl font-extrabold text-on-surface">92</span>
+                <span id="metric-weekly-val" class="font-headline-xl text-3xl font-extrabold text-on-surface">78</span>
                 <span class="text-sm text-tertiary font-bold">%</span>
               </div>
               <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs mt-1 font-medium">
                 <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                <span>Cumplido sin impacto</span>
+                <span id="metric-weekly-status">Recuperación activa</span>
               </div>
             </div>
             <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
-              <div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 92%;"></div>
+              <div id="metric-weekly-bar" class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 78%;"></div>
             </div>
           </div>
 
-          <!-- Card 4: Impacto Evitado -->
+          <!-- Card 4: Impacto Evitado (Dinámico por Paciente) -->
           <div class="relative bg-surface-container p-5 rounded-2xl border border-surface-variant/40 shadow-sm flex flex-col justify-between">
             <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-fixed-dim rounded-l-2xl"></div>
             <div class="flex items-center justify-between mb-2">
-              <span class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Impacto tibial evitado</span>
+              <span id="metric-avoided-title" class="font-label-sm text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Impacto articular evitado</span>
               <span class="material-symbols-outlined text-secondary-fixed-dim text-xl">directions_bike</span>
             </div>
             <div class="my-2">
               <div class="flex items-baseline gap-1">
-                <span class="font-headline-xl text-3xl font-extrabold text-on-surface">42</span>
-                <span class="text-sm text-secondary-fixed-dim font-bold">km</span>
+                <span id="metric-avoided-val" class="font-headline-xl text-3xl font-extrabold text-on-surface">36</span>
+                <span id="metric-avoided-unit" class="text-sm text-secondary-fixed-dim font-bold">km</span>
               </div>
               <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs mt-1 font-medium">
                 <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                <span>Sustituidos por ciclismo</span>
+                <span id="metric-avoided-status">Protegiendo tejidos</span>
               </div>
             </div>
             <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-2">
-              <div class="bg-secondary-fixed-dim h-full rounded-full transition-all duration-500" style="width: 84%;"></div>
+              <div id="metric-avoided-bar" class="bg-secondary-fixed-dim h-full rounded-full transition-all duration-500" style="width: 72%;"></div>
             </div>
           </div>
         </div>
