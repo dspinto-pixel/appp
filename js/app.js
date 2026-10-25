@@ -9,6 +9,24 @@
   const Storage = {
     KEY_HISTORY: 'kineticload_history',
     KEY_SESSION: 'kineticload_session_progress',
+    KEY_ATHLETE: 'kineticload_athlete',
+
+    getAthlete() {
+      try {
+        const stored = localStorage.getItem(this.KEY_ATHLETE);
+        return stored ? JSON.parse(stored) : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    saveAthlete(athlete) {
+      try {
+        localStorage.setItem(this.KEY_ATHLETE, JSON.stringify(athlete));
+      } catch (e) {
+        console.warn('LocalStorage no disponible:', e);
+      }
+    },
 
     getHistory() {
       try {
@@ -128,7 +146,196 @@
   window.KineticRouter = Router;
 
   // ==========================================
-  // 3. FUNCIÓN 5: DASHBOARD Y GRÁFICO LINEAL
+  // 3. MÓDULO DE PERFIL & REGISTRO DE ATLETA
+  // ==========================================
+  const ProfileModule = {
+    currentAthlete: null,
+    selectedPainZone: "Espinilla (Tibia derecha)",
+
+    init() {
+      this.currentAthlete = Storage.getAthlete() || { ...window.KineticData.defaultAthlete };
+      this.selectedPainZone = this.currentAthlete.painZone || "Espinilla (Tibia derecha)";
+
+      this.initModalEvents();
+      this.applyAthleteData(this.currentAthlete);
+
+      // Si es un usuario nuevo (primera vez que entra), abrir modal automáticamente
+      if (!Storage.getAthlete()) {
+        setTimeout(() => {
+          this.openModal();
+        }, 700);
+      }
+    },
+
+    initModalEvents() {
+      const modal = document.getElementById('athlete-profile-modal');
+      const triggerBtn = document.getElementById('btn-profile-trigger');
+      const closeBtn = document.getElementById('close-profile-modal-btn');
+      const form = document.getElementById('athlete-profile-form');
+      const painRange = document.getElementById('profile-pain-range');
+      const painDisplay = document.getElementById('profile-pain-val-display');
+
+      if (triggerBtn) {
+        triggerBtn.addEventListener('click', () => this.openModal());
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => this.closeModal());
+      }
+
+      // Slider de dolor en el modal
+      if (painRange && painDisplay) {
+        painRange.addEventListener('input', (e) => {
+          painDisplay.textContent = `${e.target.value} / 10`;
+        });
+      }
+
+      // Botones de selección de zona de molestia en el modal
+      const painBtns = document.querySelectorAll('.profile-pain-btn');
+      painBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          painBtns.forEach(b => {
+            b.classList.remove('active', 'bg-tertiary/20', 'border-2', 'border-tertiary', 'text-tertiary', 'font-semibold', 'shadow-sm');
+            b.classList.add('bg-surface-container-low', 'border-surface-variant/50', 'text-on-surface-variant', 'font-medium');
+          });
+          btn.classList.add('active', 'bg-tertiary/20', 'border-2', 'border-tertiary', 'text-tertiary', 'font-semibold', 'shadow-sm');
+          btn.classList.remove('bg-surface-container-low', 'border-surface-variant/50', 'text-on-surface-variant', 'font-medium');
+
+          this.selectedPainZone = btn.getAttribute('data-pain-zone') || "Espinilla (Tibia derecha)";
+        });
+      });
+
+      // Submit del formulario
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.saveFromForm();
+        });
+      }
+    },
+
+    openModal() {
+      const modal = document.getElementById('athlete-profile-modal');
+      if (!modal) return;
+
+      // Cargar valores actuales en el formulario
+      const nameInput = document.getElementById('input-athlete-name');
+      const ageInput = document.getElementById('input-athlete-age');
+      const sportSelect = document.getElementById('input-athlete-sport');
+      const painRange = document.getElementById('profile-pain-range');
+      const painDisplay = document.getElementById('profile-pain-val-display');
+
+      if (nameInput) nameInput.value = this.currentAthlete.name === "Nuevo Atleta" ? "" : this.currentAthlete.name;
+      if (ageInput) ageInput.value = this.currentAthlete.age || "";
+      if (sportSelect) sportSelect.value = this.currentAthlete.sport || "running";
+      if (painRange) painRange.value = this.currentAthlete.initialPain || 3;
+      if (painDisplay) painDisplay.textContent = `${painRange ? painRange.value : 3} / 10`;
+
+      // Marcar botón de dolor
+      const painBtns = document.querySelectorAll('.profile-pain-btn');
+      painBtns.forEach(btn => {
+        const zone = btn.getAttribute('data-pain-zone');
+        if (zone === this.selectedPainZone) {
+          btn.classList.add('active', 'bg-tertiary/20', 'border-2', 'border-tertiary', 'text-tertiary', 'font-semibold', 'shadow-sm');
+          btn.classList.remove('bg-surface-container-low', 'border-surface-variant/50', 'text-on-surface-variant', 'font-medium');
+        } else {
+          btn.classList.remove('active', 'bg-tertiary/20', 'border-2', 'border-tertiary', 'text-tertiary', 'font-semibold', 'shadow-sm');
+          btn.classList.add('bg-surface-container-low', 'border-surface-variant/50', 'text-on-surface-variant', 'font-medium');
+        }
+      });
+
+      modal.classList.remove('hidden');
+    },
+
+    closeModal() {
+      const modal = document.getElementById('athlete-profile-modal');
+      if (modal) modal.classList.add('hidden');
+    },
+
+    saveFromForm() {
+      const name = document.getElementById('input-athlete-name')?.value.trim() || "Atleta";
+      const age = parseInt(document.getElementById('input-athlete-age')?.value, 10) || 25;
+      const sport = document.getElementById('input-athlete-sport')?.value || "running";
+      const painVal = parseFloat(document.getElementById('profile-pain-range')?.value) || 3;
+
+      const sportLabels = {
+        running: "Running",
+        ciclismo: "Ciclismo",
+        crossfit: "Crossfit",
+        fuerza: "Fuerza",
+        futbol: "Fútbol / Deporte"
+      };
+
+      const updatedAthlete = {
+        name: name,
+        age: age,
+        sport: sport,
+        sportLabel: sportLabels[sport] || "Atleta",
+        painZone: this.selectedPainZone,
+        initialPain: painVal,
+        status: "Desinflamación Activa",
+        safeThreshold: 4
+      };
+
+      this.currentAthlete = updatedAthlete;
+      Storage.saveAthlete(updatedAthlete);
+      this.applyAthleteData(updatedAthlete);
+      this.closeModal();
+
+      window.showToast(`¡Bienvenido ${name}! Tus ejercicios para ${this.selectedPainZone} están listos.`, 'success');
+      Router.navigate('dashboard');
+    },
+
+    applyAthleteData(athlete) {
+      if (!athlete) return;
+
+      // 1. Header
+      const headerName = document.getElementById('header-athlete-name');
+      const headerMeta = document.getElementById('header-athlete-meta');
+      if (headerName) headerName.textContent = athlete.name;
+      if (headerMeta) headerMeta.textContent = `${athlete.age} años • ${athlete.sportLabel || 'Atleta'}`;
+
+      // 2. Dashboard Greetings
+      const dashGreeting = document.getElementById('dash-greeting-name');
+      const dashZone = document.getElementById('dash-greeting-zone');
+      const dashStatus = document.getElementById('dash-status-zone');
+      const registerGreeting = document.getElementById('register-greeting-name');
+
+      if (dashGreeting) dashGreeting.textContent = athlete.name;
+      if (dashZone) dashZone.textContent = athlete.painZone;
+      if (dashStatus) {
+        dashStatus.innerHTML = `
+          <span class="material-symbols-outlined text-primary text-base">verified</span>
+          ${athlete.painZone.split('(')[0].trim()}
+        `;
+      }
+      if (registerGreeting) registerGreeting.textContent = athlete.name;
+
+      // 3. Recomendación Bioadaptativa según zona de dolor
+      const protocol = window.KineticData.painProtocols[athlete.painZone] || window.KineticData.painProtocols["Espinilla (Tibia derecha)"];
+      const presTitle = document.getElementById('dash-prescription-title');
+      const presDesc = document.getElementById('dash-prescription-desc');
+
+      if (presTitle && protocol) presTitle.textContent = protocol.bannerText;
+      if (presDesc && protocol) presDesc.textContent = protocol.bannerDetails;
+
+      // 4. Actualizar módulo de registro
+      if (window.KineticRegister) {
+        window.KineticRegister.selectedZone = athlete.painZone;
+        window.KineticRegister.selectedSport = athlete.sport || 'running';
+      }
+
+      // 5. Actualizar sesión guiada con los ejercicios específicos de su molestia
+      if (window.KineticSession) {
+        window.KineticSession.loadExercisesForProtocol(athlete.painZone);
+      }
+    }
+  };
+
+  window.KineticProfile = ProfileModule;
+
+  // ==========================================
+  // 4. FUNCIÓN 5: DASHBOARD Y GRÁFICO LINEAL
   // ==========================================
   const DashboardModule = {
     init() {
@@ -176,7 +383,6 @@
       const history = Storage.getHistory();
       if (!history || history.length === 0) return;
 
-      // Usar los últimos 14 registros
       const data = history.slice(-14);
 
       const width = 700;
@@ -194,7 +400,6 @@
 
       const stepX = data.length > 1 ? chartW / (data.length - 1) : chartW;
 
-      // Puntos para la línea de Carga (Cian)
       const loadPoints = data.map((d, i) => {
         const x = padLeft + i * stepX;
         const norm = (Number(d.load) || 0) / maxLoad;
@@ -202,7 +407,6 @@
         return { x, y, val: d.load, day: d.day, activity: d.activity };
       });
 
-      // Puntos para la línea de Dolor EVA (Verde / Ámbar / Rojo)
       const painPoints = data.map((d, i) => {
         const x = padLeft + i * stepX;
         const norm = (Number(d.pain) || 0) / maxPain;
@@ -210,10 +414,8 @@
         return { x, y, val: d.pain, day: d.day, activity: d.activity };
       });
 
-      // Generar path SVG para Carga
       const loadPathD = loadPoints.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
 
-      // Generar path SVG suavizado para Dolor
       let painPathD = `M ${painPoints[0].x.toFixed(1)} ${painPoints[0].y.toFixed(1)}`;
       for (let i = 0; i < painPoints.length - 1; i++) {
         const p0 = painPoints[i];
@@ -222,14 +424,10 @@
         painPathD += ` Q ${p0.x.toFixed(1)} ${p0.y.toFixed(1)}, ${mx} ${((p0.y + p1.y) / 2).toFixed(1)} T ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
       }
 
-      // Área sombreada bajo la curva de dolor
       const painAreaD = `${painPathD} L ${painPoints[painPoints.length - 1].x.toFixed(1)} ${(padTop + chartH).toFixed(1)} L ${painPoints[0].x.toFixed(1)} ${(padTop + chartH).toFixed(1)} Z`;
-
-      // Posición Y de la línea de Umbral Seguro (EVA = 4)
       const safeThresholdY = padTop + chartH - ((4 / maxPain) * chartH);
 
       container.innerHTML = `
-        <!-- Zona Verde de Retorno Seguro de fondo -->
         <div class="absolute inset-x-0 bottom-0 bg-primary/5 border-t border-dashed border-primary/40 rounded-lg pointer-events-none flex items-start px-3 pt-1" style="height: ${(chartH * 0.4).toFixed(0)}px;">
           <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Zona de Retorno Seguro (Molestia controlada ≤ 4)</span>
         </div>
@@ -242,34 +440,23 @@
             </linearGradient>
           </defs>
 
-          <!-- Guías de fondo horizontales -->
           <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${padTop}" y2="${padTop}"></line>
           <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH * 0.33).toFixed(1)}" y2="${(padTop + chartH * 0.33).toFixed(1)}"></line>
           <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH * 0.66).toFixed(1)}" y2="${(padTop + chartH * 0.66).toFixed(1)}"></line>
           
-          <!-- Línea de Umbral Seguro (EVA = 4) -->
           <line stroke="#4edea3" stroke-dasharray="5 5" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${safeThresholdY.toFixed(1)}" y2="${safeThresholdY.toFixed(1)}"></line>
-          
-          <!-- Eje X inferior -->
           <line stroke="#2e3545" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH).toFixed(1)}" y2="${(padTop + chartH).toFixed(1)}"></line>
 
-          <!-- ÁREA SOMBREADA BAJO DOLOR -->
           <path d="${painAreaD}" fill="url(#painGradDynamic)"></path>
-
-          <!-- LÍNEA 1: CARGA DE ENTRENAMIENTO (CIAN) -->
           <path d="${loadPathD}" fill="none" stroke="#4cd7f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"></path>
-
-          <!-- LÍNEA 2: DOLOR TIBIAL EVA (VERDE / ÁMBAR) -->
           <path d="${painPathD}" fill="none" stroke="#4edea3" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
 
-          <!-- PUNTOS INTERACTIVOS: CARGA (Cian) -->
-          ${loadPoints.map((p, i) => `
+          ${loadPoints.map((p) => `
             <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#4cd7f6" stroke="#003640" stroke-width="1.5" class="cursor-pointer" onclick="window.showToast('${p.day}: Carga ${p.val}km • ${p.activity || ""}', 'info')">
               <title>${p.day}: Carga ${p.val}km</title>
             </circle>
           `).join('')}
 
-          <!-- PUNTOS INTERACTIVOS: DOLOR EVA (Semáforo) -->
           ${painPoints.map((p, i) => {
             const isHigh = p.val > 6;
             const isMedium = p.val > 4 && p.val <= 6;
@@ -284,9 +471,6 @@
             `;
           }).join('')}
         </svg>
-
-        <!-- Tooltip flotante interactivo -->
-        <div id="chart-tooltip" class="hidden absolute pointer-events-none bg-surface-container-highest border border-surface-variant px-2.5 py-1.5 rounded-lg shadow-xl text-xs z-30"></div>
       `;
     }
   };
@@ -294,7 +478,7 @@
   window.KineticDashboard = DashboardModule;
 
   // ==========================================
-  // 4. FUNCIÓN 1: REGISTRAR MOLESTIA & RPE
+  // 5. FUNCIÓN 1: REGISTRAR MOLESTIA & RPE
   // ==========================================
   const RegisterModule = {
     selectedSport: 'running',
@@ -487,7 +671,7 @@
   window.KineticRegister = RegisterModule;
 
   // ==========================================
-  // 5. FUNCIÓN 2: BIBLIOTECA & FILTROS (Buscar)
+  // 6. FUNCIÓN 2: BIBLIOTECA & FILTROS (Buscar)
   // ==========================================
   const RoutinesModule = {
     currentFilter: 'all',
@@ -623,7 +807,7 @@
   window.KineticRoutines = RoutinesModule;
 
   // =========================================================================
-  // 6. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
+  // 7. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
   // =========================================================================
   const SessionModule = {
     currentIndex: 0,
@@ -631,8 +815,12 @@
     timerSeconds: 20,
     intervalId: null,
     exerciseResults: {},
+    currentExercises: [],
 
     init() {
+      const athlete = Storage.getAthlete() || window.KineticData.defaultAthlete;
+      this.loadExercisesForProtocol(athlete ? athlete.painZone : "Espinilla (Tibia derecha)");
+
       this.initButtons();
       this.renderStep();
       this.startLoopTimer();
@@ -644,6 +832,14 @@
           this.pauseLoopTimer();
         }
       });
+    },
+
+    loadExercisesForProtocol(painZone) {
+      const protocol = window.KineticData.painProtocols[painZone] || window.KineticData.painProtocols["Espinilla (Tibia derecha)"];
+      this.currentExercises = protocol && protocol.exercises ? protocol.exercises : window.KineticData.painProtocols["Espinilla (Tibia derecha)"].exercises;
+      this.currentIndex = 0;
+      this.exerciseResults = {};
+      this.renderStep();
     },
 
     initButtons() {
@@ -688,8 +884,8 @@
     },
 
     renderStep() {
-      const exercises = window.KineticData.guidedSessionExercises || [];
-      if (exercises.length === 0) return;
+      const exercises = this.currentExercises;
+      if (!exercises || exercises.length === 0) return;
 
       const ex = exercises[this.currentIndex];
       if (!ex) return;
@@ -701,9 +897,9 @@
       if (stepCounter) stepCounter.textContent = `Paso ${this.currentIndex + 1} de ${exercises.length}:`;
       
       const motivationalTexts = [
-        "Iniciando protocolo de descarga en sóleo",
-        "Aislamiento muscular sin tracción tibial",
-        "Restaurando movilidad de tobillo",
+        "Iniciando descarga activa para tu molestia",
+        "Aislamiento muscular seguro sin impacto",
+        "Restaurando movilidad articular",
         "Cierre descompresivo final"
       ];
       if (stepMotivational) stepMotivational.textContent = motivationalTexts[this.currentIndex] || "Ejecuta con calma";
@@ -744,10 +940,8 @@
 
     renderSegmentedBar() {
       const container = document.getElementById('session-segmented-bar');
-      const exercises = window.KineticData.guidedSessionExercises || [];
-      if (!container) return;
-
-      const shortNames = ["1. Rodillo", "2. Sóleo", "3. Movilidad", "4. Cierre"];
+      const exercises = this.currentExercises;
+      if (!container || !exercises) return;
 
       container.innerHTML = exercises.map((ex, idx) => {
         const result = this.exerciseResults[idx];
@@ -774,8 +968,8 @@
           <div class="flex flex-col gap-1 cursor-pointer" onclick="window.KineticSession.goToStep(${idx})">
             <div class="h-2 w-full rounded-full ${colorClass} transition-all duration-300"></div>
             <div class="flex items-center justify-between px-0.5">
-              <span class="font-label-sm text-[10px] uppercase ${isCurrent ? 'text-secondary font-bold' : (result ? 'text-on-surface' : 'text-on-surface-variant/60')}">
-                ${shortNames[idx] || `Paso ${idx + 1}`}
+              <span class="font-label-sm text-[10px] uppercase truncate ${isCurrent ? 'text-secondary font-bold' : (result ? 'text-on-surface' : 'text-on-surface-variant/60')}">
+                ${ex.title.split(' ')[0]} ${idx + 1}
               </span>
               ${iconHtml}
             </div>
@@ -786,8 +980,7 @@
 
     markStep(status) {
       this.exerciseResults[this.currentIndex] = status;
-
-      const exercises = window.KineticData.guidedSessionExercises || [];
+      const exercises = this.currentExercises;
 
       if (status === 'completed') {
         window.showToast(`Paso ${this.currentIndex + 1} completado con éxito`, 'success');
@@ -812,6 +1005,9 @@
       const discomfortCount = results.filter(r => r === 'discomfort').length;
       const skippedCount = results.filter(r => r === 'skipped').length;
 
+      const athlete = Storage.getAthlete() || window.KineticData.defaultAthlete;
+      const athleteName = athlete ? athlete.name : "Atleta";
+
       const modalHtml = `
         <div id="session-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md">
           <div class="bg-surface-container max-w-md w-full p-6 rounded-2xl border border-surface-variant/50 shadow-2xl flex flex-col gap-4 text-center">
@@ -821,9 +1017,9 @@
             
             <div>
               <span class="text-xs text-primary font-bold uppercase tracking-wider">Protocolo Finalizado</span>
-              <h3 class="font-headline-lg text-xl text-on-surface font-bold mt-1">¡Gran trabajo de descarga, Mateo!</h3>
+              <h3 class="font-headline-lg text-xl text-on-surface font-bold mt-1">¡Gran trabajo de descarga, ${athleteName}!</h3>
               <p class="font-body-sm text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                Tus tejidos se han liberado de sobretensión. Has cuidado tu periostio sin perder adaptación aeróbica.
+                Tus tejidos se han liberado de sobretensión. Has protegido tu ${athlete ? athlete.painZone : 'zona de molestia'} sin perder adaptación aeróbica.
               </p>
             </div>
 
@@ -862,7 +1058,7 @@
     },
 
     goToStep(index) {
-      const exercises = window.KineticData.guidedSessionExercises || [];
+      const exercises = this.currentExercises;
       if (index >= 0 && index < exercises.length) {
         this.currentIndex = index;
         this.renderStep();
@@ -911,7 +1107,7 @@
   window.KineticSession = SessionModule;
 
   // ==========================================
-  // 7. AVISO MÉDICO & NOTIFICACIONES
+  // 8. AVISO MÉDICO & NOTIFICACIONES
   // ==========================================
   function initMedicalDisclaimer() {
     const banner = document.getElementById('prototype-medical-banner');
@@ -953,6 +1149,7 @@
   // Inicialización global
   document.addEventListener('DOMContentLoaded', () => {
     Router.init();
+    ProfileModule.init();
     DashboardModule.init();
     RegisterModule.init();
     RoutinesModule.init();

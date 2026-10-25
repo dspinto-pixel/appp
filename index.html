@@ -174,17 +174,19 @@
         </a>
       </nav>
 
-      <!-- Perfil del Atleta: Mateo Gómez -->
+      <!-- Perfil del Atleta: Configurable Dinámicamente -->
       <div class="flex items-center gap-3">
-        <div class="hidden sm:flex flex-col items-end">
-          <span class="font-label-md text-sm text-on-surface font-semibold leading-tight">Mateo Gómez</span>
-          <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Triatleta Sub-Elite</span>
-        </div>
-        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-secondary p-0.5 shadow-md flex items-center justify-center">
-          <div class="w-full h-full rounded-full bg-surface-container-low flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary text-[20px]">person</span>
+        <button id="btn-profile-trigger" type="button" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-surface-variant/50 transition-all text-left cursor-pointer group shadow-sm" title="Cambiar datos de atleta y molestia">
+          <div class="hidden sm:flex flex-col items-end">
+            <span id="header-athlete-name" class="font-label-md text-xs sm:text-sm text-on-surface font-semibold leading-tight group-hover:text-primary transition-colors">Mateo Gómez</span>
+            <span id="header-athlete-meta" class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">24 años • Running</span>
           </div>
-        </div>
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-primary to-secondary p-0.5 shadow-md flex items-center justify-center shrink-0">
+            <div class="w-full h-full rounded-full bg-surface-container-low flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <span class="material-symbols-outlined text-primary text-[18px] sm:text-[20px]">person</span>
+            </div>
+          </div>
+        </button>
       </div>
 
     </div>
@@ -204,21 +206,21 @@
           <div class="flex flex-col gap-1.5 max-w-3xl">
             <div class="inline-flex items-center gap-2 self-start px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
               <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
-              <span class="font-label-sm text-[11px] uppercase tracking-wider font-semibold">Telemetría de Readaptación • Maratón D-28</span>
+              <span id="dash-telemetry-tag" class="font-label-sm text-[11px] uppercase tracking-wider font-semibold">Telemetría de Readaptación • Protocolo Activo</span>
             </div>
             <h1 class="font-headline-lg text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-              ¡Hola Mateo! Tu recuperación va por muy buen camino <span class="inline-block hover:rotate-12 transition-transform duration-300">🌱</span>
+              ¡Hola <span id="dash-greeting-name" class="text-primary">Mateo</span>! Tu recuperación va por muy buen camino <span class="inline-block hover:rotate-12 transition-transform duration-300">🌱</span>
             </h1>
-            <p class="font-body-md text-on-surface-variant leading-relaxed">
-              Cuidando tu tibia y sóleo para llegar al 100% a tu carrera en 4 semanas. Monitoreamos cada kilojulio sin comprometer tu periostio.
+            <p id="dash-greeting-desc" class="font-body-md text-on-surface-variant leading-relaxed">
+              Cuidando tu <strong id="dash-greeting-zone" class="text-on-surface">Espinilla (Tibia derecha)</strong> con ejercicios y descargas personalizadas para que mantengas tu condición física sin dolor.
             </p>
           </div>
-          <div class="flex items-center gap-3 bg-surface-container-high px-4 py-3 rounded-xl border border-surface-variant/50 shrink-0 shadow-sm">
+          <div class="flex items-center gap-3 bg-surface-container-high px-4 py-3 rounded-xl border border-surface-variant/50 shrink-0 shadow-sm cursor-pointer hover:border-primary/50 transition-colors" onclick="window.KineticProfile.openModal()" title="Toca para cambiar zona de molestia o perfil">
             <div class="flex flex-col text-right">
-              <span class="font-label-sm text-[10px] text-on-surface-variant uppercase font-medium">Estado Periostio Derecho</span>
-              <span class="font-headline-sm text-sm sm:text-base text-primary flex items-center justify-end gap-1 font-bold">
+              <span id="dash-status-label" class="font-label-sm text-[10px] text-on-surface-variant uppercase font-medium">Zona en Tratamiento</span>
+              <span id="dash-status-zone" class="font-headline-sm text-sm sm:text-base text-primary flex items-center justify-end gap-1 font-bold">
                 <span class="material-symbols-outlined text-primary text-base">verified</span>
-                Desinflamación Activa
+                Espinilla / Periostio
               </span>
             </div>
             <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -335,10 +337,10 @@
                     <span class="material-symbols-outlined text-secondary text-sm">update</span> Calibrado para hoy
                   </span>
                 </div>
-                <h2 class="font-headline-md text-lg sm:text-xl text-on-surface font-bold leading-snug">
+                <h2 id="dash-prescription-title" class="font-headline-md text-lg sm:text-xl text-on-surface font-bold leading-snug">
                   Hoy cuidamos tu espinilla: 40 min de pedaleo suave en Z2 + 10 min de automasaje de descarga en sóleo.
                 </h2>
-                <p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
+                <p id="dash-prescription-desc" class="font-body-md text-sm text-on-surface-variant leading-relaxed">
                   Mantienes tu capacidad aeróbica intacta con <strong class="text-primary font-semibold">Cero Impacto</strong> en asfalto, permitiendo la regeneración del periostio tibial sin perder VO2 Max para el maratón.
                 </p>
               </div>
@@ -609,7 +611,7 @@
               <span class="text-xs text-on-surface-variant font-medium">Sesión de hoy</span>
             </div>
             <h2 class="font-headline-lg text-2xl sm:text-3xl text-on-surface font-bold tracking-tight">
-              ¿Cómo han respondido tus piernas hoy, <span class="text-primary">Mateo</span>?
+              ¿Cómo han respondido tus piernas hoy, <span id="register-greeting-name" class="text-primary">Mateo</span>?
             </h2>
             <p class="font-body-md text-sm text-on-surface-variant">
               Registra la zona con sobrecarga, tu nivel de molestia del 1 al 10 y el esfuerzo percibido (RPE).
@@ -1145,6 +1147,101 @@
       </p>
     </div>
   </footer>
+
+  <!-- MODAL DE REGISTRO Y PERFIL DEL ATLETA (Personalización de Recuperación) -->
+  <div id="athlete-profile-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md overflow-y-auto">
+    <div class="bg-surface-container max-w-lg w-full p-6 sm:p-7 rounded-2xl border border-surface-variant/50 shadow-2xl flex flex-col gap-5 my-8">
+      
+      <div class="flex items-center justify-between border-b border-surface-variant/30 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-inner">
+            <span class="material-symbols-outlined text-2xl">person_add</span>
+          </div>
+          <div class="flex flex-col">
+            <h3 class="font-headline-sm text-lg text-on-surface font-bold">Registro de Atleta</h3>
+            <span class="text-xs text-on-surface-variant">Personaliza tus ejercicios según lo que te duele</span>
+          </div>
+        </div>
+        <button id="close-profile-modal-btn" type="button" class="text-on-surface-variant hover:text-on-surface transition-colors p-1" title="Cerrar ventana">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <form id="athlete-profile-form" class="flex flex-col gap-4">
+        <!-- 1. Nombre -->
+        <div class="flex flex-col gap-1.5">
+          <label for="input-athlete-name" class="text-xs text-on-surface font-semibold uppercase tracking-wider">¿Cómo te llamas?</label>
+          <input type="text" id="input-athlete-name" required placeholder="Ej. Mateo, Carlos, Sofía, Daniel..." class="w-full bg-surface-container-low border border-surface-variant/50 rounded-xl px-3.5 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors"/>
+        </div>
+
+        <!-- 2. Edad y Deporte -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1.5">
+            <label for="input-athlete-age" class="text-xs text-on-surface font-semibold uppercase tracking-wider">Edad:</label>
+            <input type="number" id="input-athlete-age" required min="12" max="99" placeholder="Ej. 24" class="w-full bg-surface-container-low border border-surface-variant/50 rounded-xl px-3.5 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors"/>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="input-athlete-sport" class="text-xs text-on-surface font-semibold uppercase tracking-wider">Deporte principal:</label>
+            <select id="input-athlete-sport" class="w-full bg-surface-container-low border border-surface-variant/50 rounded-xl px-3.5 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors">
+              <option value="running">Running / Atletismo</option>
+              <option value="ciclismo">Ciclismo / Triatlón</option>
+              <option value="crossfit">Crossfit / Funcional</option>
+              <option value="fuerza">Fuerza / Gimnasio</option>
+              <option value="futbol">Fútbol / Otros</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. ¿Dónde sientes la molestia? -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs text-on-surface font-semibold uppercase tracking-wider flex items-center justify-between">
+            <span>¿Dónde sientes la molestia o sobrecarga?</span>
+            <span class="text-[10px] text-primary font-bold lowercase">(define tus ejercicios)</span>
+          </label>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="profile-pain-zone-selector">
+            <button type="button" class="profile-pain-btn active p-3 rounded-xl bg-tertiary/20 border-2 border-tertiary text-tertiary text-left text-xs font-semibold flex items-center gap-2 transition-all shadow-sm" data-pain-zone="Espinilla (Tibia derecha)">
+              <span class="material-symbols-outlined text-base">warning</span>
+              <span>Espinilla / Periostio tibial</span>
+            </button>
+            <button type="button" class="profile-pain-btn p-3 rounded-xl bg-surface-container-low border border-surface-variant/50 text-on-surface-variant hover:text-on-surface text-left text-xs font-medium flex items-center gap-2 transition-all" data-pain-zone="Gemelo / Sóleo">
+              <span class="material-symbols-outlined text-base">fitness_center</span>
+              <span>Gemelo / Sóleo</span>
+            </button>
+            <button type="button" class="profile-pain-btn p-3 rounded-xl bg-surface-container-low border border-surface-variant/50 text-on-surface-variant hover:text-on-surface text-left text-xs font-medium flex items-center gap-2 transition-all" data-pain-zone="Tendón de Aquiles">
+              <span class="material-symbols-outlined text-base">directions_walk</span>
+              <span>Tendón de Aquiles</span>
+            </button>
+            <button type="button" class="profile-pain-btn p-3 rounded-xl bg-surface-container-low border border-surface-variant/50 text-on-surface-variant hover:text-on-surface text-left text-xs font-medium flex items-center gap-2 transition-all" data-pain-zone="Rodilla / Rótula">
+              <span class="material-symbols-outlined text-base">sports_gymnastics</span>
+              <span>Rodilla / Tendón rotuliano</span>
+            </button>
+            <button type="button" class="profile-pain-btn col-span-full p-3 rounded-xl bg-surface-container-low border border-surface-variant/50 text-on-surface-variant hover:text-on-surface text-left text-xs font-medium flex items-center gap-2 transition-all" data-pain-zone="Planta del pie / Fascia">
+              <span class="material-symbols-outlined text-base">footprint</span>
+              <span>Planta del pie / Fascia plantar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Nivel de molestia inicial -->
+        <div class="flex flex-col gap-2 pt-1 border-t border-surface-variant/30">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-on-surface font-semibold">Nivel de molestia inicial (1 al 10):</span>
+            <span id="profile-pain-val-display" class="font-bold text-base text-primary">3 / 10</span>
+          </div>
+          <input type="range" id="profile-pain-range" min="1" max="10" step="1" value="3" class="w-full h-2 bg-surface-container-lowest rounded-lg cursor-pointer"/>
+        </div>
+
+        <!-- Botón Guardar -->
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-primary hover:bg-surface-tint text-on-primary font-bold text-sm shadow-lg shadow-primary/25 transition-all touch-press mt-2 flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-lg">check_circle</span>
+          <span>Guardar Perfil y Generar Mis Ejercicios</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
 
   <!-- NOTIFICACIÓN TOAST FLOTANTE -->
   <div id="app-toast" class="hidden fixed bottom-20 lg:bottom-8 right-4 lg:right-8 z-50 bg-surface-container-highest border border-primary/30 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 transition-all duration-300 transform translate-y-12 opacity-0">
