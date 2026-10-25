@@ -1,4 +1,4 @@
-// KineticLoad - Lógica Principal, Navegación y Gestores de Funciones
+// KineticLoad - Lógica Principal, Navegación y Telemetría Adaptativa
 
 (function () {
   'use strict';
@@ -31,9 +31,9 @@
     getHistory() {
       try {
         const stored = localStorage.getItem(this.KEY_HISTORY);
-        return stored ? JSON.parse(stored) : window.KineticData.history;
+        return stored ? JSON.parse(stored) : null;
       } catch (e) {
-        return window.KineticData.history;
+        return null;
       }
     },
 
@@ -46,22 +46,34 @@
     },
 
     addLog(entry) {
-      const history = this.getHistory();
+      let history = this.getHistory() || [];
       history.push(entry);
       this.saveHistory(history);
       return history;
     },
 
-    getLatestLog() {
-      const history = this.getHistory();
-      return history.length > 0 ? history[history.length - 1] : null;
+    getSessionResults() {
+      try {
+        const stored = localStorage.getItem(this.KEY_SESSION);
+        return stored ? JSON.parse(stored) : {};
+      } catch (e) {
+        return {};
+      }
+    },
+
+    saveSessionResults(results) {
+      try {
+        localStorage.setItem(this.KEY_SESSION, JSON.stringify(results));
+      } catch (e) {
+        console.warn('LocalStorage no disponible:', e);
+      }
     }
   };
 
   window.KineticStorage = Storage;
 
   // ==========================================
-  // 2. ENRUTADOR Y NAVEGACIÓN (Desktop & Mobile)
+  // 2. ENRUTADOR Y NAVEGACIÓN
   // ==========================================
   const Router = {
     currentView: 'dashboard',
@@ -105,7 +117,7 @@
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // Actualizar links de escritorio
+      // Links de escritorio
       document.querySelectorAll('.desktop-nav-link').forEach(link => {
         const viewAttr = link.getAttribute('data-view');
         if (viewAttr === viewId) {
@@ -117,7 +129,7 @@
         }
       });
 
-      // Actualizar links de celular
+      // Links de celular
       document.querySelectorAll('.mobile-nav-link').forEach(link => {
         const viewAttr = link.getAttribute('data-view');
         const icon = link.querySelector('.mobile-nav-icon');
@@ -146,24 +158,31 @@
   window.KineticRouter = Router;
 
   // =========================================================================
-  // 3. MÓDULO DE PERFIL & REGISTRO DE ATLETA (Personalización Dinámica)
+  // 3. MÓDULO DE PERFIL & REGISTRO DE ATLETA
   // =========================================================================
   const ProfileModule = {
     currentAthlete: null,
     selectedPainZone: "Espinilla (Tibia derecha)",
 
     init() {
-      this.currentAthlete = Storage.getAthlete() || { ...window.KineticData.defaultAthlete };
-      this.selectedPainZone = this.currentAthlete.painZone || "Espinilla (Tibia derecha)";
+      const stored = Storage.getAthlete();
+      if (stored) {
+        this.currentAthlete = stored;
+        this.selectedPainZone = stored.painZone || "Espinilla (Tibia derecha)";
+      } else {
+        // Atleta no registrado: crear perfil inicial nuevo
+        this.currentAthlete = { ...window.KineticData.defaultAthlete };
+        this.selectedPainZone = this.currentAthlete.painZone;
+      }
 
       this.initModalEvents();
       this.applyAthleteData(this.currentAthlete);
 
-      // Si es un usuario nuevo, abrir modal automáticamente
-      if (!Storage.getAthlete()) {
+      // Si es un usuario nuevo (primera vez sin registrar), abrir modal
+      if (!stored) {
         setTimeout(() => {
           this.openModal();
-        }, 700);
+        }, 600);
       }
     },
 
@@ -174,6 +193,7 @@
       const form = document.getElementById('athlete-profile-form');
       const painRange = document.getElementById('profile-pain-range');
       const painDisplay = document.getElementById('profile-pain-val-display');
+      const demoBtn = document.getElementById('btn-reset-demo');
 
       if (triggerBtn) {
         triggerBtn.addEventListener('click', () => this.openModal());
@@ -183,14 +203,12 @@
         closeBtn.addEventListener('click', () => this.closeModal());
       }
 
-      // Slider de dolor en el modal
       if (painRange && painDisplay) {
         painRange.addEventListener('input', (e) => {
           painDisplay.textContent = `${e.target.value} / 10`;
         });
       }
 
-      // Botones de selección de zona de molestia en el modal
       const painBtns = document.querySelectorAll('.profile-pain-btn');
       painBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -205,11 +223,39 @@
         });
       });
 
-      // Submit del formulario
       if (form) {
         form.addEventListener('submit', (e) => {
           e.preventDefault();
           this.saveFromForm();
+        });
+      }
+
+      // Botón para cargar la demostración completa de Mateo Gómez
+      if (demoBtn) {
+        demoBtn.addEventListener('click', () => {
+          const demoAthlete = {
+            name: "Mateo Gómez",
+            age: 24,
+            sport: "running",
+            sportLabel: "Running",
+            painZone: "Espinilla (Tibia derecha)",
+            initialPain: 4.5,
+            status: "Desinflamación Activa",
+            safeThreshold: 4,
+            isDemo: true
+          };
+          Storage.saveAthlete(demoAthlete);
+          Storage.saveHistory(window.KineticData.history);
+          Storage.saveSessionResults({ 0: 'completed', 1: 'completed', 2: 'completed' });
+
+          this.currentAthlete = demoAthlete;
+          this.selectedPainZone = demoAthlete.painZone;
+          this.applyAthleteData(demoAthlete);
+          this.closeModal();
+
+          DashboardModule.renderMetrics();
+          DashboardModule.renderLineChart();
+          window.showToast('Demostración de Mateo Gómez (14 días) cargada', 'success');
         });
       }
     },
@@ -227,8 +273,8 @@
       if (nameInput) nameInput.value = this.currentAthlete.name === "Nuevo Atleta" ? "" : this.currentAthlete.name;
       if (ageInput) ageInput.value = this.currentAthlete.age || "";
       if (sportSelect) sportSelect.value = this.currentAthlete.sport || "running";
-      if (painRange) painRange.value = this.currentAthlete.initialPain || 3;
-      if (painDisplay) painDisplay.textContent = `${painRange ? painRange.value : 3} / 10`;
+      if (painRange) painRange.value = this.currentAthlete.initialPain || 4;
+      if (painDisplay) painDisplay.textContent = `${painRange ? painRange.value : 4} / 10`;
 
       const painBtns = document.querySelectorAll('.profile-pain-btn');
       painBtns.forEach(btn => {
@@ -250,43 +296,11 @@
       if (modal) modal.classList.add('hidden');
     },
 
-    generateBaselineHistory(sport, initialPain, painZone) {
-      const sportActivities = {
-        running: ["Rodaje suave", "Progresivo", "Regenerativo", "Fartlek", "Bicicleta Z2", "Carrera continua"],
-        ciclismo: ["Rodillo suave", "Fondo aeróbico", "Cadencia alta", "Pedaleo regenerativo", "Subida controlada"],
-        crossfit: ["WOD movilidad", "Metcon adaptado", "Fuerza isométrica", "Intervalos remo", "Trabajo escapular"],
-        fuerza: ["Isometría", "Técnica tren inferior", "Hipertrofia controlada", "Descarga articular"],
-        futbol: ["Trote césped", "Activación articular", "Movilidad dinámica", "Pase y control suave"]
-      };
-      const list = sportActivities[sport] || sportActivities.running;
-      const history = [];
-      const basePain = Number(initialPain) || 3.5;
-
-      for (let i = 1; i <= 14; i++) {
-        const isPeak = (i === 4);
-        const dayPain = isPeak ? Math.min(9.8, basePain + 2.2) : (i === 14 ? basePain : (i > 10 ? Math.max(1.5, basePain - 0.7) : Math.max(1.5, basePain + (Math.sin(i * 1.5) * 0.8))));
-        const dayLoad = (sport === 'ciclismo' ? 14 + (i % 5) * 3 : (sport === 'running' ? 7 + (i % 4) * 2.5 : 8 + (i % 3) * 2));
-        const act = list[(i - 1) % list.length];
-        const dayRpe = Math.min(9.5, Math.max(2.5, dayPain + 2.0));
-
-        history.push({
-          day: i === 14 ? "Hoy" : `Día ${i}`,
-          load: Number(dayLoad.toFixed(1)),
-          pain: Number(dayPain.toFixed(1)),
-          rpe: Number(dayRpe.toFixed(1)),
-          sport: sport,
-          zone: painZone,
-          activity: `${act} (${dayLoad}${sport === 'ciclismo' || sport === 'running' ? 'km' : 'min'})`
-        });
-      }
-      return history;
-    },
-
     saveFromForm() {
       const name = document.getElementById('input-athlete-name')?.value.trim() || "Atleta";
       const age = parseInt(document.getElementById('input-athlete-age')?.value, 10) || 25;
       const sport = document.getElementById('input-athlete-sport')?.value || "running";
-      const painVal = parseFloat(document.getElementById('profile-pain-range')?.value) || 3;
+      const painVal = parseFloat(document.getElementById('profile-pain-range')?.value) || 4;
 
       const sportLabels = {
         running: "Running",
@@ -296,45 +310,58 @@
         futbol: "Fútbol / Deporte"
       };
 
-      const updatedAthlete = {
+      const newAthlete = {
         name: name,
         age: age,
         sport: sport,
         sportLabel: sportLabels[sport] || "Atleta",
         painZone: this.selectedPainZone,
         initialPain: painVal,
-        status: "Desinflamación Activa",
-        safeThreshold: 4
+        status: "Día 1 • Rehabilitación Iniciada",
+        safeThreshold: 4,
+        registeredAt: new Date().toISOString(),
+        isDemo: false
       };
 
-      this.currentAthlete = updatedAthlete;
-      Storage.saveAthlete(updatedAthlete);
+      // Al registrar un nuevo paciente: SOLO APARECE SU DOLOR INICIAL.
+      // Su historial arranca limpio en Día 1 (sin RPE ni carga previa aún).
+      const freshHistory = [
+        {
+          day: "Día 1 (Registro)",
+          load: 0,
+          pain: painVal,
+          rpe: 0,
+          hasTrained: false,
+          sport: sport,
+          zone: this.selectedPainZone,
+          activity: `Evaluación inicial: ${this.selectedPainZone}`
+        }
+      ];
 
-      // Generar historia adaptada al dolor inicial del nuevo paciente
-      const personalizedHistory = this.generateBaselineHistory(sport, painVal, this.selectedPainZone);
-      Storage.saveHistory(personalizedHistory);
+      Storage.saveAthlete(newAthlete);
+      Storage.saveHistory(freshHistory);
+      Storage.saveSessionResults({}); // 0 ejercicios completados al inicio
 
-      this.applyAthleteData(updatedAthlete);
+      this.currentAthlete = newAthlete;
+      this.applyAthleteData(newAthlete);
       this.closeModal();
 
-      // Recalcular métricas y gráfico con los nuevos datos del paciente
+      // Recalcular el Dashboard para que empiece en 0 con solo el dolor activo
       DashboardModule.renderMetrics();
       DashboardModule.renderLineChart();
 
-      window.showToast(`¡Bienvenido ${name}! Métricas y ejercicios ajustados a tu nivel de dolor (${painVal}/10).`, 'success');
+      window.showToast(`¡Perfil de ${name} creado! Dolor inicial: ${painVal}/10. Inicia tu primera sesión guiada.`, 'success');
       Router.navigate('dashboard');
     },
 
     applyAthleteData(athlete) {
       if (!athlete) return;
 
-      // 1. Header
       const headerName = document.getElementById('header-athlete-name');
       const headerMeta = document.getElementById('header-athlete-meta');
       if (headerName) headerName.textContent = athlete.name;
       if (headerMeta) headerMeta.textContent = `${athlete.age} años • ${athlete.sportLabel || 'Atleta'}`;
 
-      // 2. Dashboard Greetings
       const dashGreeting = document.getElementById('dash-greeting-name');
       const dashZone = document.getElementById('dash-greeting-zone');
       const dashStatus = document.getElementById('dash-status-zone');
@@ -350,7 +377,6 @@
       }
       if (registerGreeting) registerGreeting.textContent = athlete.name;
 
-      // 3. Recomendación Bioadaptativa según zona de dolor
       const protocol = window.KineticData.painProtocols[athlete.painZone] || window.KineticData.painProtocols["Espinilla (Tibia derecha)"];
       const presTitle = document.getElementById('dash-prescription-title');
       const presDesc = document.getElementById('dash-prescription-desc');
@@ -358,13 +384,11 @@
       if (presTitle && protocol) presTitle.textContent = protocol.bannerText;
       if (presDesc && protocol) presDesc.textContent = protocol.bannerDetails;
 
-      // 4. Actualizar módulo de registro
       if (window.KineticRegister) {
         window.KineticRegister.selectedZone = athlete.painZone;
         window.KineticRegister.selectedSport = athlete.sport || 'running';
       }
 
-      // 5. Actualizar sesión guiada con los ejercicios específicos de su molestia
       if (window.KineticSession) {
         window.KineticSession.loadExercisesForProtocol(athlete.painZone);
       }
@@ -374,7 +398,7 @@
   window.KineticProfile = ProfileModule;
 
   // =========================================================================
-  // 4. FUNCIÓN 5: DASHBOARD Y MÉTRICAS DINÁMICAS POR PACIENTE
+  // 4. FUNCIÓN 5: DASHBOARD Y MÉTRICAS DINÁMICAS (Solo dolor al inicio)
   // =========================================================================
   const DashboardModule = {
     init() {
@@ -391,35 +415,50 @@
 
     renderMetrics() {
       const athlete = Storage.getAthlete() || window.KineticData.defaultAthlete;
-      const history = Storage.getHistory();
-      const latest = history.length > 0 ? history[history.length - 1] : { rpe: 6.0, pain: athlete.initialPain || 3.0 };
+      const history = Storage.getHistory() || window.KineticData.history;
+      const sessionResults = Storage.getSessionResults();
 
-      const painVal = Number(latest.pain) || 3.0;
-      const rpeVal = Number(latest.rpe) || 6.0;
+      // Buscar si el paciente ya ha registrado un entrenamiento real
+      const trainedLogs = history.filter(h => h.hasTrained || (h.rpe > 0 && !h.activity.includes("Evaluación inicial")));
+      const latestWorkout = trainedLogs.length > 0 ? trainedLogs[trainedLogs.length - 1] : null;
 
-      // --- TARJETA 1: RPE Y PORCENTAJE ---
+      // Último registro general (para dolor)
+      const latestLog = history.length > 0 ? history[history.length - 1] : null;
+      const painVal = latestLog ? Number(latestLog.pain) : (athlete.initialPain || 4.0);
+
+      // --- 1. TARJETA 1: ESFUERZO HOY (RPE) ---
+      // Apenas se registra el paciente NO APARECE NADA (muestra -- y 0%)
+      // Solo aparece cuando registra un entreno en "Registrar Molestia"
       const rpeElem = document.getElementById('metric-rpe-val');
       const rpeBar = document.getElementById('metric-rpe-bar');
       const rpeStatus = document.getElementById('metric-rpe-status');
 
-      if (rpeElem) rpeElem.textContent = rpeVal.toFixed(1);
-      const rpePercent = Math.min(100, Math.max(10, Math.round((rpeVal / 10) * 100)));
-      if (rpeBar) rpeBar.style.width = `${rpePercent}%`;
-
-      if (rpeStatus) {
-        if (rpeVal <= 4) rpeStatus.textContent = "Esfuerzo ligero y controlado";
-        else if (rpeVal <= 6) rpeStatus.textContent = "Moderado y seguro";
-        else if (rpeVal <= 8) rpeStatus.textContent = "Exigente pero tolerable";
-        else rpeStatus.textContent = "Alta demanda neuromuscular";
+      if (latestWorkout && latestWorkout.rpe > 0) {
+        const rpeVal = Number(latestWorkout.rpe);
+        if (rpeElem) rpeElem.textContent = rpeVal.toFixed(1);
+        const rpePercent = Math.min(100, Math.max(5, Math.round((rpeVal / 10) * 100)));
+        if (rpeBar) rpeBar.style.width = `${rpePercent}%`;
+        if (rpeStatus) {
+          if (rpeVal <= 4) rpeStatus.textContent = "Esfuerzo ligero y seguro";
+          else if (rpeVal <= 6) rpeStatus.textContent = "Moderado y tolerable";
+          else if (rpeVal <= 8) rpeStatus.textContent = "Exigente";
+          else rpeStatus.textContent = "Alta demanda neuromuscular";
+        }
+      } else {
+        // Estado inicial de recién registrado:
+        if (rpeElem) rpeElem.textContent = "--";
+        if (rpeBar) rpeBar.style.width = "0%";
+        if (rpeStatus) rpeStatus.textContent = "Pendiente de registrar entreno";
       }
 
-      // --- TARJETA 2: DOLOR EVA Y PORCENTAJE ---
+      // --- 2. TARJETA 2: NIVEL DE DOLOR (EVA) ---
+      // EL ÚNICO QUE TIENE VALOR Y PORCENTAJE DESDE EL PRIMER MOMENTO
       const painElem = document.getElementById('metric-pain-val');
       const painBar = document.getElementById('metric-pain-bar');
       const painStatusElem = document.getElementById('metric-pain-status');
 
       if (painElem) painElem.textContent = painVal.toFixed(1);
-      const painPercent = Math.min(100, Math.max(10, Math.round((painVal / 10) * 100)));
+      const painPercent = Math.min(100, Math.max(5, Math.round((painVal / 10) * 100)));
       if (painBar) {
         painBar.style.width = `${painPercent}%`;
         if (painVal <= 4) painBar.className = "bg-primary h-full rounded-full transition-all duration-500";
@@ -440,26 +479,33 @@
         }
       }
 
-      // --- TARJETA 3: META SEMANAL (Cálculo adaptativo según dolor del paciente) ---
+      // --- 3. TARJETA 3: PROGRESO DE REHABILITACIÓN (%) ---
+      // INICIA EN 0% Y SE ACTUALIZA CONFORME HACE LOS EJERCICIOS
+      const totalExercises = 4;
+      const completedCount = Object.values(sessionResults).filter(status => status === 'completed').length;
+      const sessionPercent = Math.min(100, Math.round((completedCount / totalExercises) * 100));
+
       const weeklyVal = document.getElementById('metric-weekly-val');
       const weeklyBar = document.getElementById('metric-weekly-bar');
       const weeklyStatus = document.getElementById('metric-weekly-status');
       const weeklyTitle = document.getElementById('metric-weekly-title');
 
-      // Cuanto menor es el dolor y mejor es el progreso, mayor es el % de recuperación (15% a 96%)
-      const recoveryPercent = Math.min(96, Math.max(20, Math.round((10 - painVal) * 9.2 + ((athlete.age || 25) < 30 ? 5 : 2))));
-
-      if (weeklyVal) weeklyVal.textContent = recoveryPercent;
-      if (weeklyBar) weeklyBar.style.width = `${recoveryPercent}%`;
-      if (weeklyTitle) weeklyTitle.textContent = "Meta de Recuperación";
+      if (weeklyTitle) weeklyTitle.textContent = "Progreso Rehabilitación";
+      if (weeklyVal) weeklyVal.textContent = sessionPercent;
+      if (weeklyBar) weeklyBar.style.width = `${sessionPercent}%`;
 
       if (weeklyStatus) {
-        if (recoveryPercent >= 80) weeklyStatus.textContent = "Recuperación acelerada";
-        else if (recoveryPercent >= 60) weeklyStatus.textContent = "Progreso constante";
-        else weeklyStatus.textContent = "Fase inicial de alivio";
+        if (completedCount === 0) {
+          weeklyStatus.textContent = "0 de 4 ejercicios completados";
+        } else if (completedCount < 4) {
+          weeklyStatus.textContent = `${completedCount} de 4 ejercicios realizados (${sessionPercent}%)`;
+        } else {
+          weeklyStatus.textContent = "¡Sesión de hoy completada al 100%!";
+        }
       }
 
-      // --- TARJETA 4: IMPACTO / SOBRECARGA EVITADA (Adaptado a su deporte y dolor) ---
+      // --- 4. TARJETA 4: IMPACTO O SOBRECARGA EVITADA ---
+      // INICIA EN 0 Y SE ACUMULA A MEDIDA QUE REALIZA EJERCICIOS DE DESCARGA
       const avoidedTitle = document.getElementById('metric-avoided-title');
       const avoidedVal = document.getElementById('metric-avoided-val');
       const avoidedUnit = document.getElementById('metric-avoided-unit');
@@ -469,38 +515,48 @@
       const sport = athlete.sport || 'running';
       const cleanZone = (athlete.painZone || 'Espinilla').split('(')[0].trim();
 
-      if (sport === 'running') {
-        const kmSaved = Math.round(20 + (10 - painVal) * 2.6);
-        const percentSaved = Math.min(95, Math.max(30, Math.round(recoveryPercent * 0.9)));
+      if (completedCount === 0) {
+        // Al registrarse: 0 acumulado
         if (avoidedTitle) avoidedTitle.textContent = `Impacto en ${cleanZone} evitado`;
-        if (avoidedVal) avoidedVal.textContent = kmSaved;
-        if (avoidedUnit) avoidedUnit.textContent = "km";
-        if (avoidedStatus) avoidedStatus.textContent = "Sustituidos por ciclismo/descarga";
-        if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
-      } else if (sport === 'ciclismo') {
-        const hrsSaved = (10 + (10 - painVal) * 1.1).toFixed(1);
-        const percentSaved = Math.min(95, Math.max(30, Math.round(recoveryPercent * 0.92)));
-        if (avoidedTitle) avoidedTitle.textContent = `Sobretensión en ${cleanZone} prevenida`;
-        if (avoidedVal) avoidedVal.textContent = hrsSaved;
-        if (avoidedUnit) avoidedUnit.textContent = "hrs";
-        if (avoidedStatus) avoidedStatus.textContent = "Pedaleo suave en Z1/Z2";
-        if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
-      } else if (sport === 'crossfit' || sport === 'fuerza') {
-        const seriesSaved = Math.round(15 + (10 - painVal) * 2);
-        const percentSaved = Math.min(95, Math.max(30, Math.round(recoveryPercent * 0.88)));
-        if (avoidedTitle) avoidedTitle.textContent = `Sobrecarga en ${cleanZone} adaptada`;
-        if (avoidedVal) avoidedVal.textContent = seriesSaved;
-        if (avoidedUnit) avoidedUnit.textContent = "series";
-        if (avoidedStatus) avoidedStatus.textContent = "Sustituidas por isometría";
-        if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        if (avoidedVal) avoidedVal.textContent = "0";
+        if (avoidedUnit) avoidedUnit.textContent = sport === 'ciclismo' ? "hrs" : (sport === 'crossfit' || sport === 'fuerza' ? "series" : "km");
+        if (avoidedStatus) avoidedStatus.textContent = "Inicia tu sesión de rehabilitación";
+        if (avoidedBar) avoidedBar.style.width = "0%";
       } else {
-        const minSaved = Math.round(50 + (10 - painVal) * 8);
-        const percentSaved = Math.min(95, Math.max(30, Math.round(recoveryPercent * 0.85)));
-        if (avoidedTitle) avoidedTitle.textContent = `Impacto articular amortiguado`;
-        if (avoidedVal) avoidedVal.textContent = minSaved;
-        if (avoidedUnit) avoidedUnit.textContent = "min";
-        if (avoidedStatus) avoidedStatus.textContent = "Descarga activa realizada";
-        if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        // A medida que hace rehabilitación:
+        if (sport === 'running') {
+          const kmSaved = (completedCount * 2.5).toFixed(1);
+          const percentSaved = Math.min(100, completedCount * 25);
+          if (avoidedTitle) avoidedTitle.textContent = `Impacto en ${cleanZone} evitado`;
+          if (avoidedVal) avoidedVal.textContent = kmSaved;
+          if (avoidedUnit) avoidedUnit.textContent = "km";
+          if (avoidedStatus) avoidedStatus.textContent = `${completedCount} ejercicios sin impacto completados`;
+          if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        } else if (sport === 'ciclismo') {
+          const hrsSaved = (completedCount * 0.4).toFixed(1);
+          const percentSaved = Math.min(100, completedCount * 25);
+          if (avoidedTitle) avoidedTitle.textContent = `Sobretensión en ${cleanZone} prevenida`;
+          if (avoidedVal) avoidedVal.textContent = hrsSaved;
+          if (avoidedUnit) avoidedUnit.textContent = "hrs";
+          if (avoidedStatus) avoidedStatus.textContent = "Descarga articular en progreso";
+          if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        } else if (sport === 'crossfit' || sport === 'fuerza') {
+          const seriesSaved = completedCount * 5;
+          const percentSaved = Math.min(100, completedCount * 25);
+          if (avoidedTitle) avoidedTitle.textContent = `Sobrecarga en ${cleanZone} adaptada`;
+          if (avoidedVal) avoidedVal.textContent = seriesSaved;
+          if (avoidedUnit) avoidedUnit.textContent = "series";
+          if (avoidedStatus) avoidedStatus.textContent = "Isometría sin impacto realizada";
+          if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        } else {
+          const minSaved = completedCount * 15;
+          const percentSaved = Math.min(100, completedCount * 25);
+          if (avoidedTitle) avoidedTitle.textContent = `Impacto articular amortiguado`;
+          if (avoidedVal) avoidedVal.textContent = minSaved;
+          if (avoidedUnit) avoidedUnit.textContent = "min";
+          if (avoidedStatus) avoidedStatus.textContent = "Descarga activa realizada";
+          if (avoidedBar) avoidedBar.style.width = `${percentSaved}%`;
+        }
       }
     },
 
@@ -515,19 +571,57 @@
 
       const width = 700;
       const height = 240;
-      const padLeft = 30;
-      const padRight = 30;
+      const padLeft = 40;
+      const padRight = 40;
       const padTop = 25;
       const padBottom = 35;
 
       const chartW = width - padLeft - padRight;
       const chartH = height - padTop - padBottom;
 
-      const maxLoad = Math.max(...data.map(d => Number(d.load) || 0), 25);
+      const maxLoad = Math.max(...data.map(d => Number(d.load) || 0), 20);
       const maxPain = 10;
 
-      const stepX = data.length > 1 ? chartW / (data.length - 1) : chartW;
+      const stepX = data.length > 1 ? chartW / (data.length - 1) : chartW / 2;
 
+      // Si es un paciente nuevo con 1 solo día de registro:
+      if (data.length === 1) {
+        const p = data[0];
+        const initialPain = Number(p.pain) || 4.0;
+        const normY = initialPain / maxPain;
+        const cy = padTop + chartH - (normY * chartH);
+        const cx = padLeft + 60;
+        const targetSafeY = padTop + chartH - ((4 / maxPain) * chartH);
+
+        container.innerHTML = `
+          <div class="absolute inset-x-0 bottom-0 bg-primary/5 border-t border-dashed border-primary/40 rounded-lg pointer-events-none flex items-start px-3 pt-1" style="height: ${(chartH * 0.4).toFixed(0)}px;">
+            <span class="font-label-sm text-[10px] text-primary uppercase font-bold tracking-wider">Zona de Retorno Seguro (Molestia controlada ≤ 4)</span>
+          </div>
+
+          <svg class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 ${width} ${height}">
+            <!-- Guías horizontales -->
+            <line stroke="#2e3545" stroke-dasharray="3 3" stroke-width="1" x1="${padLeft}" x2="${width - padRight}" y1="${padTop}" y2="${padTop}"></line>
+            <line stroke="#4edea3" stroke-dasharray="5 5" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${targetSafeY.toFixed(1)}" y2="${targetSafeY.toFixed(1)}"></line>
+            <line stroke="#2e3545" stroke-width="1.5" x1="${padLeft}" x2="${width - padRight}" y1="${(padTop + chartH).toFixed(1)}" y2="${(padTop + chartH).toFixed(1)}"></line>
+
+            <!-- Línea de proyección hacia zona segura -->
+            <path d="M ${cx} ${cy.toFixed(1)} Q ${(cx + 180)} ${cy.toFixed(1)}, ${(cx + 360)} ${(targetSafeY + 15).toFixed(1)}" fill="none" stroke="#4edea3" stroke-dasharray="4 4" stroke-width="2" opacity="0.6"></path>
+
+            <!-- Punto inicial del paciente -->
+            <circle cx="${cx}" cy="${cy.toFixed(1)}" r="7" fill="${initialPain > 6 ? '#ffb4ab' : (initialPain > 4 ? '#ffb95f' : '#4edea3')}" stroke="#003824" stroke-width="2"></circle>
+            
+            <text x="${cx + 14}" y="${cy - 8}" fill="#dce2f7" font-size="12" font-weight="bold" font-family="Inter">
+              Día 1: Dolor Inicial ${initialPain}/10
+            </text>
+            <text x="${cx + 14}" y="${cy + 12}" fill="#86948a" font-size="10" font-family="Inter">
+              Evaluación médica inicial • Registra tus próximos entrenos para trazar la curva
+            </text>
+          </svg>
+        `;
+        return;
+      }
+
+      // Si hay varios días (o datos de demo/histórico):
       const loadPoints = data.map((d, i) => {
         const x = padLeft + i * stepX;
         const norm = (Number(d.load) || 0) / maxLoad;
@@ -771,12 +865,14 @@
 
         const now = new Date();
         const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        const history = Storage.getHistory() || [];
 
         const newEntry = {
-          day: `Hoy (${timeStr})`,
+          day: `Día ${history.length + 1} (${timeStr})`,
           load: this.selectedSport === 'ciclismo' ? 18 : 8.5,
           pain: painVal,
           rpe: rpeVal,
+          hasTrained: true,
           sport: this.selectedSport,
           zone: this.selectedZone,
           notes: notes,
@@ -787,7 +883,7 @@
         DashboardModule.renderMetrics();
         DashboardModule.renderLineChart();
 
-        window.showToast(`¡Registro guardado! Dolor: ${painVal}/10 • RPE: ${rpeVal}/10`, 'success');
+        window.showToast(`¡Registro de entreno guardado! RPE: ${rpeVal}/10 • Dolor: ${painVal}/10`, 'success');
 
         setTimeout(() => {
           Router.navigate('dashboard');
@@ -935,7 +1031,7 @@
   window.KineticRoutines = RoutinesModule;
 
   // =========================================================================
-  // 7. FUNCIONES 3 Y 4: SESIÓN GUIADA (Videos 20s + Marcar 3 Estados)
+  // 7. FUNCIONES 3 Y 4: SESIÓN GUIADA (Actualiza % de Rehabilitación)
   // =========================================================================
   const SessionModule = {
     currentIndex: 0,
@@ -947,6 +1043,7 @@
 
     init() {
       const athlete = Storage.getAthlete() || window.KineticData.defaultAthlete;
+      this.exerciseResults = Storage.getSessionResults();
       this.loadExercisesForProtocol(athlete ? athlete.painZone : "Espinilla (Tibia derecha)");
 
       this.initButtons();
@@ -955,6 +1052,8 @@
 
       window.addEventListener('viewChanged', (e) => {
         if (e.detail && e.detail.view === 'session') {
+          this.exerciseResults = Storage.getSessionResults();
+          this.renderSegmentedBar();
           this.startLoopTimer();
         } else {
           this.pauseLoopTimer();
@@ -966,7 +1065,6 @@
       const protocol = window.KineticData.painProtocols[painZone] || window.KineticData.painProtocols["Espinilla (Tibia derecha)"];
       this.currentExercises = protocol && protocol.exercises ? protocol.exercises : window.KineticData.painProtocols["Espinilla (Tibia derecha)"].exercises;
       this.currentIndex = 0;
-      this.exerciseResults = {};
       this.renderStep();
     },
 
@@ -1103,15 +1201,20 @@
 
     markStep(status) {
       this.exerciseResults[this.currentIndex] = status;
+      Storage.saveSessionResults(this.exerciseResults);
+
       const exercises = this.currentExercises;
 
       if (status === 'completed') {
-        window.showToast(`Paso ${this.currentIndex + 1} completado con éxito`, 'success');
+        window.showToast(`Paso ${this.currentIndex + 1} completado. ¡Progreso de rehabilitación actualizado!`, 'success');
       } else if (status === 'discomfort') {
         window.showToast(`Paso ${this.currentIndex + 1} omitido por molestia (registrado)`, 'warning');
       } else if (status === 'skipped') {
         window.showToast(`Paso ${this.currentIndex + 1} marcado como no realizado`, 'error');
       }
+
+      // Actualizar de inmediato los porcentajes en el Dashboard
+      DashboardModule.renderMetrics();
 
       if (this.currentIndex < exercises.length - 1) {
         this.currentIndex++;
@@ -1167,7 +1270,7 @@
 
             <div class="flex flex-col gap-2 pt-2">
               <button type="button" class="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md" onclick="document.getElementById('session-modal').remove(); window.KineticRouter.navigate('dashboard');">
-                Volver a Mi Progreso
+                Ver Mi Progreso en Dashboard
               </button>
               <button type="button" class="w-full py-2.5 rounded-xl bg-surface-container-highest text-on-surface font-semibold text-xs" onclick="document.getElementById('session-modal').remove(); window.KineticSession.resetSession();">
                 Repetir protocolo
@@ -1191,7 +1294,9 @@
     resetSession() {
       this.currentIndex = 0;
       this.exerciseResults = {};
+      Storage.saveSessionResults({});
       this.renderStep();
+      DashboardModule.renderMetrics();
       window.showToast('Sesión reiniciada desde el paso 1', 'success');
     },
 
